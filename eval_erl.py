@@ -12,7 +12,9 @@ def skelToNetworkX(nodes, edges, seg_list, res):
     node_segment_lut = [{}]*len(seg_list)
     cc = 0
     for k in range(len(nodes)):
-        node = (nodes[k] / res).astype(int)
+        if len(edges[k]) == 0:
+            continue
+        node = nodes[k].astype(int)
         edge = edges[k] + cc
         for l in range(node.shape[0]):
             gt_graph.add_node(cc, skeleton_id = k, z=node[l,0]*res[0], y=node[l,1]*res[1], x=node[l,2]*res[2])
@@ -38,8 +40,17 @@ if __name__ == "__main__":
         print('need three arguments: skel_path, seg_path resolution')
         print('example: python eval_erl.py xx.pkl yy.h5 30x6x6')
         # resolution: xyz-order
+    # for nodes position: voxel or physical
     skel_path, seg_path, resolution = sys.argv[1], sys.argv[2], sys.argv[3]
+    
     gt_nodes, gt_edges = pickle.load(open(skel_path, 'rb'), encoding="latin1")
+
+    # assume node position is the voxel
+    if len(sys.argv) > 4:
+        for i in range(len(gt_nodes)):
+            if len(gt_nodes[i])>0:
+                gt_nodes[i] = gt_nodes[i] / resolution
+
     pred_seg = readVol(seg_path)
     resolution = [int(x) for x in resolution.split('x')]
 
