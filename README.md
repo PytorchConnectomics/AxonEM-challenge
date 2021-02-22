@@ -18,4 +18,4 @@ conda install -c conda-forge -c ostrokach-forge -c pkgw-forge graph-tool
 pip install -r requirements.txt
 pip install --editable .
 ```
-- Example: `python test_skel.py tmp/gt_skel.p snemi_train-labels.tif 30x6x6`
+- Example: `python eval_erl.py tmp/gt_skel.p snemi_train-labels.tif 30x6x6`
