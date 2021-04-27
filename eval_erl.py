@@ -5,7 +5,7 @@ import networkx as nx
 from io_util import readVol
 import pickle
 
-def skelToNetworkX(nodes, edges, seg_list, res):
+def skelToNetworkX(nodes, edges, res, seg_list=[]):
     # for ERL evaluation
     # node: physical unit
     gt_graph = nx.Graph()
@@ -25,8 +25,11 @@ def skelToNetworkX(nodes, edges, seg_list, res):
             gt_graph.add_edge(edge[l,0], edge[l,1])
     return gt_graph, node_segment_lut
 
-def test_erl(gt_nodes, gt_edges, pred_seg, res= [30,6,6], merge_thres=0):
-    gt_graph, node_segment_lut = skelToNetworkX(gt_nodes, gt_edges, [pred_seg], res)
+def test_erl(gt_nodes, gt_edges, pred_seg, res= [30,6,6], merge_thres=0, node_segment_lut = None):
+    if node_segment_lut is not None:
+        gt_graph, _ = skelToNetworkX(gt_nodes, gt_edges, res)
+    else:
+        gt_graph, node_segment_lut = skelToNetworkX(gt_nodes, gt_edges, res, [pred_seg])
     scores = evaluate.expected_run_length(
                     skeletons=gt_graph,
                     skeleton_id_attribute='skeleton_id',
@@ -40,7 +43,7 @@ if __name__ == "__main__":
     if len(sys.argv) < 4:
         print('need three arguments: skel_path, seg_path resolution merge_threshold')
         print('example: python eval_erl.py xx.pkl yy.h5 30x6x6')
-        # resolution: xyz-order
+    # resolution and node should match
     # for nodes position: voxel or physical
     skel_path, seg_path, resolution = sys.argv[1], sys.argv[2], sys.argv[3]
     
