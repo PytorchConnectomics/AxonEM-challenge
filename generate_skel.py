@@ -2,7 +2,7 @@ import os,sys
 import h5py
 import numpy as np
 import kimimaro
-from io_util import readVol
+from io_util import read_vol
 import pickle
 
 def skeletonize(labels, scale=4, const=500, obj_ids=None, dust_size = 100, res = (32,32,30), num_thread = 1):
@@ -45,7 +45,7 @@ if __name__ == "__main__":
         raise ValueError()
     seg_path, resolution, skel_id, output_path = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
     print('load segmentation')
-    seg = readVol(seg_path)
+    seg = read_vol(seg_path)
     resolution = [int(x) for x in resolution.split('x')]
     skel_id = None if skel_id == '-1' else [int(x) for x in skel_id.split(',')]
 
