@@ -4,7 +4,7 @@ Python Library for ERL Evaluation
 ### ERL Evaluation
 - Installation
 ```
-conda env create -n erl-eval
+conda create -n erl-eval python==3.9.0
 source activate erl-eval
 
 # install [funlib.evaluate](https://github.com/donglaiw/funlib.evaluate)
