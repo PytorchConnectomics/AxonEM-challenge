@@ -9,8 +9,8 @@ source activate erl-eval
 
 # install [funlib.evaluate](https://github.com/donglaiw/funlib.evaluate)
 conda install -c conda-forge -c ostrokach-forge -c pkgw-forge graph-tool
-pip install -r requirements.txt
 cd funlib.evaluate
+pip install -r requirements.txt
 python setup.py install
 cd ..
 ```
