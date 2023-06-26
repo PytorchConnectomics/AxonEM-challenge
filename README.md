@@ -14,7 +14,7 @@ pip install -r requirements.txt
 python setup.py install
 cd ..
 ```
-- Example: `python eval_erl.py tmp/gt_skel.p snemi_train-labels.tif 30x6x6`
+- AxonEM evaluation: `python /n/home04/donglai/lib/AxonEM-challenge/test_axonEM.py --seg-path seg_axonM.h5 -g axonM_gt_16nm_skel_stats.p --volume-name mouse`
 
 ### Generate Skeleton
 - install [kimimaro](https://github.com/seung-lab/kimimaro)
