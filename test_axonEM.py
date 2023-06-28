@@ -5,9 +5,9 @@ from io_util import *
 from eval_erl import *
 
 
-def test_axonEM(gt_graph, node_out, pred_seg_path, num_chunk=1):
-    node_segment_lut_chunk = compute_node_segment_lut_byname(node_out, [pred_seg_path], num_chunk)
-    scores = compute_erl(gt_graph, node_segment_lut_chunk)
+def test_axonEM(gt_graph, node_position, pred_seg_path, num_chunk=1):
+    node_segment_lut = compute_node_segment_lut_lowmem(node_position, [pred_seg_path], num_chunk)
+    scores = compute_erl(gt_graph, node_segment_lut)
     for sid, score in enumerate(scores):
         print(f'ERL for seg {sid}: {score}')
 
@@ -35,16 +35,16 @@ if __name__ == "__main__":
     args = get_arguments()
     # get stats
     if args.gt_stats_path != "":
-        gt_graph, node_out = read_pkl(args.gt_stats_path) 
+        gt_graph, node_position = read_pkl(args.gt_stats_path) 
     else:
         gt_skel = read_pkl(args.gt_skel_path)[0]
         gt_nodes = [gt_skel[x].vertices for x in gt_skel]
         gt_edges = [gt_skel[x].edges for x in gt_skel]
 
         gt_resolution = [int(x) for x in args.gt_skel_resolution.split(',')]
-        gt_graph, _, node_out = skeleton_to_networkx(gt_nodes, gt_edges, gt_resolution, [], True)
+        gt_graph, _, node_position = skeleton_to_networkx(gt_nodes, gt_edges, gt_resolution, [], True)
         gt_stats_path = args.gt_skel_path[:args.gt_skel_path.rfind('.')] + '_stats.p'
-        writepkl(gt_stats_path, [gt_graph, node_out])
+        writepkl(gt_stats_path, [gt_graph, node_position])
 
     # compute erl
-    test_axonEM(gt_graph, node_out, args.seg_path)
+    test_axonEM(gt_graph, node_position, args.seg_path)

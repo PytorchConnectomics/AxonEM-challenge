@@ -13,7 +13,9 @@ def test_volume(skeleton_path, seg_path, resolution, merge_threshold, node_unit)
             if len(gt_nodes[i]) > 0:
                 gt_nodes[i] = gt_nodes[i] / resolution
     pred_seg = read_vol(seg_path)
-    scores = compute_erl(None, None, merge_threshold, gt_nodes, gt_edges, pred_seg, resolution)
+    gt_graph, node_segment_lut = skeleton_to_networkx(gt_nodes, gt_edges, resolution, [pred_seg])
+
+    scores = compute_erl(gt_graph, node_segment_lut, merge_threshold)
     for sid, score in enumerate(scores):
         print(f'ERL for seg {sid}: {score}')
 
