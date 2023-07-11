@@ -3,11 +3,10 @@ import numpy as np
 import h5py
 import pickle
 from imageio import volread
-        
 
 def read_vol(filename, datasetname=None, chunk_id=0, chunk_num=1):
     if '.h5' in filename:
-        return read_h5(filename, datasetname, chunk_id=0, chunk_num=1)
+        return read_h5(filename, datasetname, chunk_id=0, chunk_num=chunk_num)
     elif '.tif' in filename or '.tiff' in filename:
         return volread(filename)
     else:
@@ -19,7 +18,7 @@ def read_pkl(filename):
           while True:
               try:
                   data.append(pickle.load(f))
-              except:
+              except EOFError:
                   break
       return data
 

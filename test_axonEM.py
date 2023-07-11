@@ -3,6 +3,7 @@ import argparse
 import numpy as np
 from io_util import *
 from eval_erl import *
+from fake_networkx import *
 
 
 def test_axonEM(gt_graph, node_position, pred_seg_path, num_chunk=1):
@@ -47,4 +48,4 @@ if __name__ == "__main__":
         writepkl(gt_stats_path, [gt_graph, node_position])
 
     # compute erl
-    test_axonEM(gt_graph, node_position, args.seg_path)
+    test_axonEM(gt_graph, node_position, args.seg_path, args.num_chunk)
