@@ -3,7 +3,6 @@ import numpy as np
 import h5py
 import pickle
 from imageio import volread
-        
 
 def read_vol(filename, datasetname=None, chunk_id=0, chunk_num=1):
     if '.h5' in filename:
@@ -19,7 +18,7 @@ def read_pkl(filename):
           while True:
               try:
                   data.append(pickle.load(f))
-              except:
+              except EOFError:
                   break
       return data
 
