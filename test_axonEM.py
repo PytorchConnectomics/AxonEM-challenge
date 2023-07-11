@@ -3,7 +3,7 @@ import argparse
 import numpy as np
 from io_util import *
 from eval_erl import *
-from fake_networkx import FakeNetworkXGraph
+from fake_networkx import *
 
 
 def test_axonEM(gt_graph, node_position, pred_seg_path, num_chunk=1):
