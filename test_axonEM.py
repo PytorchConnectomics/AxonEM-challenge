@@ -5,7 +5,6 @@ from io_util import *
 from eval_erl import *
 from fake_networkx import *
 
-
 def test_axonEM(gt_graph, node_position, pred_seg_path, num_chunk=1):
     node_segment_lut = compute_node_segment_lut_lowmem(node_position, [pred_seg_path], num_chunk)
     scores = compute_erl(gt_graph, node_segment_lut)
@@ -35,6 +34,7 @@ if __name__ == "__main__":
     # python test_axonEM.py -s db/30um_human/axon_release/gt_16nm.h5 -g db/30um_human/axon_release/gt_16nm_skel_stats.p -v human -c 1 
     args = get_arguments()
     # get stats
+    # coord system: zyx
     if args.gt_stats_path != "":
         gt_graph, node_position = read_pkl(args.gt_stats_path) 
     else:

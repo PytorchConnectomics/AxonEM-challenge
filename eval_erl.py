@@ -47,6 +47,7 @@ def compute_node_segment_lut(node_position, seg_list, dtype=np.uint32):
 
 def compute_node_segment_lut_lowmem(node_position, seg_name_list, chunk_num=1, dtype=np.uint32):
     # low memory version of the lut computation
+    # node coord: zyx
     node_segment_lut = [np.zeros(node_position.shape[0], dtype)] * len(seg_name_list)
     for seg_id, seg_name in enumerate(seg_name_list):
         assert '.h5' in seg_name
