@@ -1,9 +1,7 @@
-import argparse
 import numpy as np
-import scipy.sparse
-from io_util import read_pkl, writepkl
+import scipy.sparse as sp
 
-# implement a fake networkx graph like class with npz backend
+# implement a light-weight networkx graph like class with npz backend
 # assumes fixed number of nodes and edges
 # skeletons.nodes()
 # skeletons.nodes(data=True)
@@ -14,7 +12,8 @@ from io_util import read_pkl, writepkl
 # return u, v, data, where data is a dict of edge attributes which can be SET
 
 
-class FakeNetworkXGraph:
+# The NetworkXGraphLite class is a lightweight version of the NetworkXGraph class.
+class NetworkXGraphLite:
     def __init__(
         self,
         node_attributes,
@@ -27,7 +26,7 @@ class FakeNetworkXGraph:
         self.node_attributes = sorted(node_attributes)
         self.node_dtype = node_dtype
         # since edges will be saved as 2D dok matrix, can only take single attribute
-        assert type(edge_attribute) == str
+        assert isinstance(edge_attribute, str)
         self.edge_attribute = edge_attribute
         self.edge_dtype = edge_dtype
 
@@ -39,9 +38,9 @@ class FakeNetworkXGraph:
 
     def init_viewers(self):
         assert self._nodes is not None
-        self.nodes = FakeNodeViewer(self._nodes, self.node_attributes)
+        self.nodes = NodeViewerLite(self._nodes, self.node_attributes)
         assert self._edges is not None
-        self.edges = FakeEdgeViewer(self._edges, self.edge_attribute)
+        self.edges = EdgeViewerLite(self._edges, self.edge_attribute)
 
     def load_graph(self, graph):
         assert len(graph.nodes) > 0
@@ -61,19 +60,21 @@ class FakeNetworkXGraph:
                 minval = min(minval, node[key])
         assert minval >= np.iinfo(self.node_dtype).min
         assert maxval <= np.iinfo(self.node_dtype).max
-        assert len(set([len(nodes[key]) for key in nodes])) == 1
+        assert len({len(nodes[key]) for key in nodes}) == 1
 
         self._nodes = np.stack(
             [np.array(nodes[key]) for key in self.node_attributes], axis=1
         ).astype(self.node_dtype)
 
-        edges = scipy.sparse.dok_matrix(
+        edges = sp.dok_matrix(
             (len(graph.nodes), len(graph.nodes)), dtype=self.edge_dtype
         )
         for edge_0, edge_1, data in graph.edges(data=True):
             edge = tuple(sorted([edge_0, edge_1]))
             edges[edge] = (
-                data[self.edge_attribute] if self.edge_attribute in data else -1
+                data[self.edge_attribute]
+                if self.edge_attribute in data
+                else -1
             )
 
         self._edges = edges
@@ -81,17 +82,18 @@ class FakeNetworkXGraph:
 
     def load_npz(self, node_npz_file, edge_npz_file):
         self._nodes = np.load(node_npz_file)["data"]
-        self._edges = scipy.sparse.load_npz(edge_npz_file).todok()
+        self._edges = sp.load_npz(edge_npz_file).todok()
         self.init_viewers()
 
     def save_npz(self, node_npz_file, edge_npz_file):
         assert self._nodes is not None
         assert self._edges is not None
         np.savez_compressed(node_npz_file, data=self._nodes)
-        scipy.sparse.save_npz(edge_npz_file, self._edges.tocoo())
+        sp.save_npz(edge_npz_file, self._edges.tocoo())
 
 
-class FakeNodeViewer:
+# The NodeViewerLite class is a simplified version of a node viewer.
+class NodeViewerLite:
     def __init__(self, nodes, node_attributes):
         self._nodes = nodes
         self._node_attributes = node_attributes
@@ -108,14 +110,15 @@ class FakeNodeViewer:
             return ((i, self[i]) for i in range(len(self._nodes)))
 
 
-class FakeEdgeViewer:
+# The EdgeViewerLite class is a lightweight viewer for displaying edges.
+class EdgeViewerLite:
     def __init__(self, edges, edge_attribute):
         self._edges = edges
         self._edge_attribute = edge_attribute
 
     def __getitem__(self, key):
         key = tuple(sorted(key))
-        return FakeEdgeDataViewer(self._edges, self._edge_attribute, key)
+        return EdgeDataViewerLite(self._edges, self._edge_attribute, key)
 
     def __call__(self, data=False):
         indices = self._edges.nonzero()
@@ -125,7 +128,8 @@ class FakeEdgeViewer:
             return ((i, j, self[i, j]) for i, j in zip(indices[0], indices[1]))
 
 
-class FakeEdgeDataViewer:
+# The EdgeDataViewerLite class is a lightweight viewer for edge data.
+class EdgeDataViewerLite:
     def __init__(self, edges, edge_attribute, key):
         self._edges = edges
         self._edge_attribute = edge_attribute
@@ -140,18 +144,17 @@ class FakeEdgeDataViewer:
         self._edges[self._key] = value
 
 
-def patch_pkl(old_pkl, new_pkl):
-    gt_graph, node_out = read_pkl(old_pkl)
-    fake_graph = FakeNetworkXGraph(["skeleton_id", "z", "y", "x"], "length")
-    fake_graph.load_graph(gt_graph)
+def convert_networkx_to_lite(networkx_graph):
+    """
+    The function converts a NetworkX graph to a NetworkXGraphLite graph.
 
-    writepkl(new_pkl, [fake_graph, node_out])
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Tool to patch gt_stats pkl file")
-    parser.add_argument("--old_pkl", type=str, help="old pkl file")
-    parser.add_argument("--new_pkl", type=str, help="new pkl file")
-    args = parser.parse_args()
-
-    patch_pkl(args.old_pkl, args.new_pkl)
+    :param networkx_graph: The `networkx_graph` parameter is a graph object from the NetworkX library.
+    It represents a graph with nodes and edges, where each node can have attributes and each edge can
+    have attributes
+    :return: a NetworkXGraphLite object.
+    """
+    networkx_lite_graph = NetworkXGraphLite(
+        ["skeleton_id", "z", "y", "x"], "length"
+    )
+    networkx_lite_graph.load_graph(networkx_graph)
+    return networkx_lite_graph

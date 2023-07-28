@@ -132,3 +132,4 @@ cmd
 tmp/
 .*sw*
 *~
+.vscode/
