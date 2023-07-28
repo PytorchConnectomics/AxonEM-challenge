@@ -59,21 +59,21 @@ def get_arguments():
         description="ERL evaluation on small volume"
     )
     parser.add_argument(
-        "-sg",
+        "-s",
         "--seg-path",
         type=str,
         help="path to the segmentation prediction",
         required=True,
     )
     parser.add_argument(
-        "-sk",
+        "-g",
         "--skeleton-path",
         type=str,
         help="path to ground truth skeleton",
         default="",
     )
     parser.add_argument(
-        "-u",
+        "-gu",
         "--skeleton-unit",
         type=str,
         choices=["physical", "voxel"],
@@ -81,7 +81,7 @@ def get_arguments():
         default="voxel",
     )
     parser.add_argument(
-        "-r",
+        "-gr",
         "--skeleton-resolution",
         type=str,
         help="resolution of ground truth skeleton",
