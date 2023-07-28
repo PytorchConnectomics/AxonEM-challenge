@@ -1,51 +1,53 @@
-import os, sys
 import argparse
-import numpy as np
-from io_util import *
-from eval_erl import *
-from fake_networkx import *
+from data_io import read_pkl
+from eval_erl import compute_node_segment_lut_low_mem, compute_erl
 
-def test_axonEM(gt_graph, node_position, pred_seg_path, num_chunk=1):
-    node_segment_lut = compute_node_segment_lut_lowmem(node_position, [pred_seg_path], num_chunk)
+
+def test_AxonEM(gt_stats_path, pred_seg_path, num_chunk=1):
+    # get stats
+    gt_graph, gt_node_voxel = read_pkl(gt_stats_path)
+
+    node_segment_lut = compute_node_segment_lut_low_mem(
+        gt_node_voxel, [pred_seg_path], num_chunk
+    )
     scores = compute_erl(gt_graph, node_segment_lut)
-    for sid, score in enumerate(scores):
-        print(f'ERL for seg {sid}: {score}')
+    print(f"ERL for seg {pred_seg_path}: {scores[0]}")
 
 
 def get_arguments():
-    parser = argparse.ArgumentParser(description="Evaluation on AxonEM")
-    parser.add_argument("-s", "--seg-path", type=str, help="path to the segmentation prediction", required=True)
-    parser.add_argument("-g", "--gt-stats-path", type=str, help="path to ground truth skeleton statistics", default="")
-    parser.add_argument("-gp", "--gt-skel-path", type=str, help="path to ground truth seg", default="")
-    parser.add_argument("-gr", "--gt-skel-resolution", type=str, help="gt skel resolution", default="60,64,64")
-    parser.add_argument("-v", "--volume-name", type=str, help="volume name {human, mouse}", required=True)
-    parser.add_argument("-c", "--num-chunk", type=int, help="number of chunks to process the volume", default=1)
-    args = parser.parse_args()
-    pred_seg_shape = get_volume_size_h5(args.seg_path)
-    gt_shape = np.array([1000,2048,2048])
-    if args.volume_name == 'mouse':
-        gt_shape[0] = 750
-    assert np.abs(gt_shape-pred_seg_shape).max()==0, print(f'segmentation volume for {args.volume_name} volume has to be {gt_shape}')
-
-    return args
+    """
+    The function `get_arguments()` is used to parse command line arguments for the evaluation on AxonEM.
+    :return: The function `get_arguments` returns the parsed command-line arguments.
+    """
+    parser = argparse.ArgumentParser(
+        description="ERL evaluation with precomputed gt statistics"
+    )
+    parser.add_argument(
+        "-s",
+        "--seg-path",
+        type=str,
+        help="path to the segmentation prediction",
+        required=True,
+    )
+    parser.add_argument(
+        "-g",
+        "--gt-stats-path",
+        type=str,
+        help="path to ground truth skeleton statistics",
+        default="",
+    )
+    parser.add_argument(
+        "-c",
+        "--num-chunk",
+        type=int,
+        help="number of chunks to process the volume",
+        default=1,
+    )
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
-    # python test_axonEM.py -s db/30um_human/axon_release/gt_16nm.h5 -g db/30um_human/axon_release/gt_16nm_skel_stats.p -v human -c 1 
+    # python test_axonEM.py -s db/30um_human/axon_release/gt_16nm.h5 -g db/30um_human/axon_release/gt_16nm_skel_stats.p -c 1
     args = get_arguments()
-    # get stats
-    # coord system: zyx
-    if args.gt_stats_path != "":
-        gt_graph, node_position = read_pkl(args.gt_stats_path) 
-    else:
-        gt_skel = read_pkl(args.gt_skel_path)[0]
-        gt_nodes = [gt_skel[x].vertices for x in gt_skel]
-        gt_edges = [gt_skel[x].edges for x in gt_skel]
-
-        gt_resolution = [int(x) for x in args.gt_skel_resolution.split(',')]
-        gt_graph, _, node_position = skeleton_to_networkx(gt_nodes, gt_edges, gt_resolution, [], True)
-        gt_stats_path = args.gt_skel_path[:args.gt_skel_path.rfind('.')] + '_stats.p'
-        writepkl(gt_stats_path, [gt_graph, node_position])
-
     # compute erl
-    test_axonEM(gt_graph, node_position, args.seg_path, args.num_chunk)
+    test_AxonEM(args.gt_stats_path, args.seg_path, args.num_chunk)
