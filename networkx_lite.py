@@ -1,5 +1,7 @@
+import argparse
 import numpy as np
 import scipy.sparse as sp
+from data_io import read_pkl, write_pkl
 
 # implement a light-weight networkx graph like class with npz backend
 # assumes fixed number of nodes and edges
@@ -158,3 +160,16 @@ def convert_networkx_to_lite(networkx_graph):
     )
     networkx_lite_graph.load_graph(networkx_graph)
     return networkx_lite_graph
+
+def patch_axonEM_stats(old_pkl, new_pkl):
+    gt_graph, node_out = read_pkl(old_pkl)
+    gt_graph_lite = convert_networkx_to_lite(gt_graph)
+    write_pkl(new_pkl, [gt_graph_lite, node_out])
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Tool to patch gt_stats pkl file")
+    parser.add_argument("--old_pkl", type=str, help="old pkl file")
+    parser.add_argument("--new_pkl", type=str, help="new pkl file")
+    args = parser.parse_args()
+
+    patch_axonEM_stats(args.old_pkl, args.new_pkl)
