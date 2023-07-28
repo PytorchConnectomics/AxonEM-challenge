@@ -2,8 +2,7 @@ import argparse
 import numpy as np
 from data_io import read_vol, read_pkl
 from skeleton import skeleton_to_networkx
-from eval_erl import *
-import pickle
+from eval_erl import compute_node_segment_lut, compute_erl
 
 
 def test_volume(
@@ -13,6 +12,25 @@ def test_volume(
     skeleton_resolution,
     erl_merge_threshold,
 ):
+    """
+    The function `test_volume` takes in various inputs, including a segmentation path, a skeleton path,
+    and parameters related to units and thresholds, and performs computations to calculate the ERL
+    (Error Rate of Length) for the given segmentation.
+
+    :param seg_path: The path to the segmentation volume file
+    :param skeleton_path: The `skeleton_path` parameter is the path to the file that contains the
+    skeleton data
+    :param skeleton_unit: The parameter "skeleton_unit" determines the unit of measurement for the
+    skeleton. It can have two possible values: "physical" or "voxel"
+    :param skeleton_resolution: The `skeleton_resolution` parameter represents the voxel size of the
+    skeleton data. It is used to convert the node positions from physical units to voxel units if
+    `skeleton_unit` is set to "voxel"
+    :param erl_merge_threshold: The `erl_merge_threshold` parameter is a threshold value used in the
+    computation of the ERL (Error Rate of Length) score. It determines the maximum distance at which two
+    segments can be merged into a single segment. Segments that are closer than this threshold will be
+    merged together
+    """
+
     pred_seg = read_vol(seg_path)
     gt_skeleton = read_pkl(skeleton_path)
 
