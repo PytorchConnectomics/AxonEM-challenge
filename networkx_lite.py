@@ -18,13 +18,11 @@ from data_io import read_pkl, write_pkl
 class NetworkXGraphLite:
     def __init__(
         self,
-        node_attributes,
-        edge_attribute,
+        node_attributes=["skeleton_id", "z", "y", "x"],
+        edge_attribute="length",
         node_dtype=np.uint16,
         edge_dtype=np.float32,
     ):
-        # node_attributes = ["skeleton_id", "z", "y", "x"]
-        # edge_attribute = "length"
         self.node_attributes = sorted(node_attributes)
         self.node_dtype = node_dtype
         # since edges will be saved as 2D dok matrix, can only take single attribute
@@ -39,12 +37,22 @@ class NetworkXGraphLite:
         self.edges = None
 
     def init_viewers(self):
+        """
+        The function initializes viewers for nodes and edges.
+        """
         assert self._nodes is not None
         self.nodes = NodeViewerLite(self._nodes, self.node_attributes)
         assert self._edges is not None
         self.edges = EdgeViewerLite(self._edges, self.edge_attribute)
 
     def load_graph(self, graph):
+        """
+        The function loads a graph into the object, ensuring that the graph nodes have the same
+        attributes and storing the node and edge data in appropriate data structures.
+
+        :param graph: The `graph` parameter is an object that represents a graph. It contains
+        information about the nodes and edges of the graph
+        """
         assert len(graph.nodes) > 0
         # assert every node has the same attributes
         assert list(graph.nodes) == list(range(len(graph.nodes)))
@@ -83,6 +91,14 @@ class NetworkXGraphLite:
         self.init_viewers()
 
     def load_npz(self, node_npz_file, edge_npz_file):
+        """
+        The function `load_npz` loads node and edge data from npz files and initializes viewers.
+
+        :param node_npz_file: The parameter `node_npz_file` is the file path to the .npz file that
+        contains the data for the nodes
+        :param edge_npz_file: The `edge_npz_file` parameter is a file path to a NumPy compressed sparse
+        matrix file (.npz) that contains the edge data
+        """
         self._nodes = np.load(node_npz_file)["data"]
         self._edges = sp.load_npz(edge_npz_file).todok()
         self.init_viewers()
@@ -161,13 +177,25 @@ def convert_networkx_to_lite(networkx_graph):
     networkx_lite_graph.load_graph(networkx_graph)
     return networkx_lite_graph
 
+
 def patch_axonEM_stats(old_pkl, new_pkl):
+    """
+    The function `patch_axonEM_stats` reads a pickle file, converts a graph to a lite version, and
+    writes the updated data to a new pickle file.
+
+    :param old_pkl: The path to the old pickle file that contains the data to be patched
+    :param new_pkl: The `new_pkl` parameter is the name or path of the new pickle file that you want to
+    create or overwrite
+    """
     gt_graph, node_out = read_pkl(old_pkl)
     gt_graph_lite = convert_networkx_to_lite(gt_graph)
     write_pkl(new_pkl, [gt_graph_lite, node_out])
 
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Tool to patch gt_stats pkl file")
+    parser = argparse.ArgumentParser(
+        description="Tool to patch gt_stats pkl file"
+    )
     parser.add_argument("--old_pkl", type=str, help="old pkl file")
     parser.add_argument("--new_pkl", type=str, help="new pkl file")
     args = parser.parse_args()
