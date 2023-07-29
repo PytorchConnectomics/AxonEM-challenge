@@ -1,8 +1,8 @@
 import argparse
 import numpy as np
-from data_io import read_vol, read_pkl
-from skeleton import skeleton_to_networkx
-from eval_erl import compute_node_segment_lut, compute_erl
+from .data_io import read_vol, read_pkl
+from .skeleton import skeleton_to_networkx
+from .eval_erl import compute_node_segment_lut, compute_erl
 
 
 def test_volume(
@@ -55,9 +55,7 @@ def get_arguments():
     volume.
     :return: the parsed arguments from the command line.
     """
-    parser = argparse.ArgumentParser(
-        description="ERL evaluation on small volume"
-    )
+    parser = argparse.ArgumentParser(description="ERL evaluation on small volume")
     parser.add_argument(
         "-s",
         "--seg-path",

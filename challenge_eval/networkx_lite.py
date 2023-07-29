@@ -1,7 +1,7 @@
 import argparse
 import numpy as np
 import scipy.sparse as sp
-from data_io import read_pkl, write_pkl
+from .data_io import read_pkl, write_pkl
 
 # implement a light-weight networkx graph like class with npz backend
 # assumes fixed number of nodes and edges
@@ -82,9 +82,7 @@ class NetworkXGraphLite:
         for edge_0, edge_1, data in graph.edges(data=True):
             edge = tuple(sorted([edge_0, edge_1]))
             edges[edge] = (
-                data[self.edge_attribute]
-                if self.edge_attribute in data
-                else -1
+                data[self.edge_attribute] if self.edge_attribute in data else -1
             )
 
         self._edges = edges
@@ -171,9 +169,7 @@ def convert_networkx_to_lite(networkx_graph):
     have attributes
     :return: a NetworkXGraphLite object.
     """
-    networkx_lite_graph = NetworkXGraphLite(
-        ["skeleton_id", "z", "y", "x"], "length"
-    )
+    networkx_lite_graph = NetworkXGraphLite(["skeleton_id", "z", "y", "x"], "length")
     networkx_lite_graph.load_graph(networkx_graph)
     return networkx_lite_graph
 
@@ -193,9 +189,7 @@ def patch_axonEM_stats(old_pkl, new_pkl):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Tool to patch gt_stats pkl file"
-    )
+    parser = argparse.ArgumentParser(description="Tool to patch gt_stats pkl file")
     parser.add_argument("--old_pkl", type=str, help="old pkl file")
     parser.add_argument("--new_pkl", type=str, help="new pkl file")
     args = parser.parse_args()
