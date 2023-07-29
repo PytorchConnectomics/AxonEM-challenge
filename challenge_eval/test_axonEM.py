@@ -26,6 +26,7 @@ def test_AxonEM(gt_stats_path, pred_seg_path, num_chunk=1):
     )
     scores = compute_erl(gt_graph, node_segment_lut)
     print(f"ERL for seg {pred_seg_path}: {scores[0]}")
+    return scores
 
 
 def get_arguments():
