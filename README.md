@@ -14,7 +14,7 @@ pip install -r requirements.txt
 python setup.py install
 cd ..
 ```
-
+(Under `challenge_eval/` folder)
 - AxonEM evaluation: `python test_axonEM.py -s seg_axonM.h5 -g axonM_gt_16nm_skel_stats.p -c 5`
 
 ### Generate Skeleton
@@ -22,5 +22,6 @@ cd ..
 ```
 pip3 install kimimaro 
 ```
+(Under `challenge_eval/` folder)
 - GT skeleton generation: `python skeleton.py -s snemi_train-labels.tif -r 30x6x6 -i 1,2,3 -o snemi_skel.p`
 - ERL evaluation: `python test_volume.py -s pred_seg.tif -g snemi_skel.p -gu physical -gr 30x6x6`
