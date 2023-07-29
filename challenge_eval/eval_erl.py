@@ -3,7 +3,7 @@
 # graph: networkx by default. To save memory for grand-challenge evaluation, we use netowrkx_lite
 import numpy as np
 from funlib import evaluate
-from data_io import read_vol
+from .data_io import read_vol
 
 
 def compute_node_segment_lut(node_position, seg_list, data_type=np.uint32):

@@ -2,8 +2,8 @@ import argparse
 import numpy as np
 import kimimaro
 import networkx as nx
-from data_io import read_vol, write_pkl
-from networkx_lite import convert_networkx_to_lite
+from .data_io import read_vol, write_pkl
+from .networkx_lite import convert_networkx_to_lite
 
 
 def skeletonize(
