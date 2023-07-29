@@ -21,7 +21,7 @@ class AxonEM:
         scores = test_AxonEM(
             gt_stats_path=self.gt_file, pred_seg_path=self.input_file, num_chunk=64
         )
-        metrics = {"erl": scores[0], "scores": scores}
+        metrics = {"erl": np.mean(scores), "scores": scores}
 
         with open(self.output_file, "w") as f:
             f.write(json.dumps(metrics))

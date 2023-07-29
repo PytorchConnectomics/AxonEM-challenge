@@ -76,9 +76,7 @@ def skeletonize(
     )
 
 
-def skeleton_to_networkx(
-    skeletons, skeleton_resolution=None, return_all_nodes=False
-):
+def skeleton_to_networkx(skeletons, skeleton_resolution=None, return_all_nodes=False):
     """
     The function `skeleton_to_networkx` converts a skeleton object into a networkx graph, with an option
     to return all nodes.
@@ -214,18 +212,14 @@ def get_arguments():
         "-i",
         "--seg-index",
         type=str,
-        help=(
-            "selected segmentation indices for skeletonization. '-1' means all"
-        ),
+        help=("selected segmentation indices for skeletonization. '-1' means all"),
         default="-1",
     )
 
     result_args = parser.parse_args()
 
     # parse segmentation resolution
-    result_args.seg_resolution = [
-        int(x) for x in result_args.seg_resolution.split("x")
-    ]
+    result_args.seg_resolution = [int(x) for x in result_args.seg_resolution.split("x")]
     # parse skeleton index
     result_args.seg_index = (
         None
@@ -256,11 +250,7 @@ if __name__ == "__main__":
         write_pkl(args.output_path, result_networkx)
     elif args.output_type == "erl":
         # for erl evaluation
-        result_networkx, result_all_nodes = skeleton_to_networkx(
-            result_skeletons, True
-        )
+        result_networkx, result_all_nodes = skeleton_to_networkx(result_skeletons, True)
         result_all_nodes_voxel = result_all_nodes // args.seg_resolution
         result_networkx_lite = convert_networkx_to_lite(result_networkx)
-        write_pkl(
-            args.output_path, [result_networkx_lite, result_all_nodes_voxel]
-        )
+        write_pkl(args.output_path, [result_networkx_lite, result_all_nodes_voxel])

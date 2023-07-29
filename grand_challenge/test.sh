@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
-# ./build.sh
+./build.sh
 
 MEM_LIMIT="4g"
 
 
-for i in "axonem_mouse axonH_gt_16nm.h5" "axonem_human axonH_gt_16nm.h5"; do
+for i in "axonem_mouse axonM_gt_16nm.h5" "axonem_human axonH_gt_16nm.h5"; do
     set -- $i # convert the "tuple" into the param args $1 $2...
     VOLUME_SUFFIX=$(dd if=/dev/urandom bs=32 count=1 | md5sum | cut --delimiter=' ' --fields=1)
 

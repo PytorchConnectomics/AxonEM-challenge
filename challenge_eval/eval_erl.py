@@ -21,9 +21,9 @@ def compute_node_segment_lut(node_position, seg_list, data_type=np.uint32):
     the array will be an unsigned 32-bit integer
     :return: the variable "node_segment_lut", which is a list of numpy arrays.
     """
-    node_segment_lut = [
-        np.zeros([node_position.shape[0], 4], data_type)
-    ] * len(seg_list)
+    node_segment_lut = [np.zeros([node_position.shape[0], 4], data_type)] * len(
+        seg_list
+    )
     for seg_id, seg_item in enumerate(seg_list):
         node_segment_lut[seg_id] = seg_item[
             node_position[:, 0], node_position[:, 1], node_position[:, 2]
@@ -62,9 +62,7 @@ def compute_node_segment_lut_low_mem(
         for chunk_id in range(chunk_num):
             seg = read_vol(seg_name, None, chunk_id, chunk_num)
             last_z = start_z + seg.shape[0]
-            ind = (node_position[:, 0] >= start_z) * (
-                node_position[:, 0] < last_z
-            )
+            ind = (node_position[:, 0] >= start_z) * (node_position[:, 0] < last_z)
             pts = node_position[ind]
             node_segment_lut[seg_id][ind] = seg[
                 pts[:, 0] - start_z, pts[:, 1], pts[:, 2]

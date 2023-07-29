@@ -55,9 +55,7 @@ def get_arguments():
     volume.
     :return: the parsed arguments from the command line.
     """
-    parser = argparse.ArgumentParser(
-        description="ERL evaluation on small volume"
-    )
+    parser = argparse.ArgumentParser(description="ERL evaluation on small volume")
     parser.add_argument(
         "-s",
         "--seg-path",
