@@ -4,12 +4,16 @@ Python Library for ERL Evaluation
 ### ERL Evaluation
 - Installation
 ```
+# create a new environment
 conda create -n erl-eval python==3.9.0
 source activate erl-eval
+conda install -c conda-forge -c ostrokach-forge -c pkgw-forge graph-tool
+
+# clone the repo
+git clone --recursive https://github.com/PytorchConnectomics/AxonEM-challenge.git
 
 # install [funlib.evaluate](https://github.com/donglaiw/funlib.evaluate)
-conda install -c conda-forge -c ostrokach-forge -c pkgw-forge graph-tool
-cd funlib.evaluate
+cd challenge_eval/funlib.evaluate
 pip install -r requirements.txt
 python setup.py install
 cd ..
