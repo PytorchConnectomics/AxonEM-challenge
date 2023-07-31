@@ -24,7 +24,9 @@ def test_AxonEM(gt_stats_path, pred_seg_path, num_chunk=1):
     node_segment_lut = compute_node_segment_lut_low_mem(
         gt_node_voxel, [pred_seg_path], num_chunk
     )
-    scores = compute_erl(gt_graph, node_segment_lut)
+    # https://donglaiw.github.io/paper/2021_miccai_axonEM.pdf
+    # page 6: we add the "tolerance" threshold to alleviate the effect from skeletonization artifacts
+    scores = compute_erl(gt_graph, node_segment_lut, merge_threshold=50)
     print(f"ERL for seg {pred_seg_path}: {scores[0]}")
     return scores
 
