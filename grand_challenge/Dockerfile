@@ -14,14 +14,15 @@ RUN touch /opt/conda/pkgs/urls.txt && chown user:user /opt/conda/pkgs/urls.txt
 
 USER user
 
+COPY --chown=user:user grand_challenge/environment.yml /tmp/environment.yml
+RUN micromamba install -y -n base -f /tmp/environment.yml && \
+    micromamba clean --all --yes
+
 COPY --chown=user:user challenge_eval /opt/app/challenge_eval
 COPY --chown=user:user grand_challenge /opt/app/grand_challenge
 
-RUN micromamba install -y -n base -f /opt/app/grand_challenge/environment.yml && \
-    micromamba clean --all --yes
 
-ARG GROUND_TRUTH_PATH
-COPY --chown=user:user ${GROUND_TRUTH_PATH} /opt/app/ground-truth/test-labels.p
+COPY --chown=user:user ground-truth /opt/app/ground-truth
 
 WORKDIR /opt/app
 
