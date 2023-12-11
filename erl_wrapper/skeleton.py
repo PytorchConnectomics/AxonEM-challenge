@@ -2,8 +2,8 @@ import argparse
 import numpy as np
 import kimimaro
 import networkx as nx
-from .data_io import read_vol, write_pkl
-from .networkx_lite import convert_networkx_to_lite
+from data_io import read_vol, write_pkl
+from networkx_lite import convert_networkx_to_lite
 
 
 def skeletonize(
@@ -76,7 +76,7 @@ def skeletonize(
     )
 
 
-def skeleton_to_networkx(skeletons, skeleton_resolution=None, return_all_nodes=False):
+def skeleton_to_networkx(skeletons, skeleton_resolution=None, return_all_nodes=False, data_type=np.uint16):
     """
     The function `skeleton_to_networkx` converts a skeleton object into a networkx graph, with an option
     to return all nodes.
@@ -103,9 +103,9 @@ def skeleton_to_networkx(skeletons, skeleton_resolution=None, return_all_nodes=F
     for skeleton_id, skeleton in enumerate(skeletons):
         if len(skeleton.edges) == 0:
             continue
-        node_arr = skeleton.vertices.astype(np.uint16)
         if skeleton_resolution is not None:
             node_arr = node_arr * skeleton_resolution
+        node_arr = skeleton.vertices.astype(data_type)
         # augment the node index
         edge_arr = skeleton.edges + count
         for node in node_arr:
@@ -126,7 +126,7 @@ def skeleton_to_networkx(skeletons, skeleton_resolution=None, return_all_nodes=F
 
 
 def node_edge_to_networkx(
-    nodes, edges, skeleton_resolution=None, return_all_nodes=False
+    nodes, edges, skeleton_resolution=None, return_all_nodes=False, data_type = np.uint16
 ):
     """
     The function `node_edge_to_networkx` converts a set of nodes and edges into a networkx graph object,
@@ -155,9 +155,9 @@ def node_edge_to_networkx(
     for skeleton_id, node_arr in enumerate(nodes):
         if len(edges[skeleton_id]) == 0:
             continue
-        node_arr = node_arr.astype(np.uint16)
         if skeleton_resolution is not None:
             node_arr = node_arr * skeleton_resolution
+        node_arr = node_arr.astype(data_type)
         # augment the node index
         edge_arr = edges[skeleton_id] + count
         for node in node_arr:

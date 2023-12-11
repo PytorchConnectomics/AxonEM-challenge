@@ -12,7 +12,7 @@ def compute_node_segment_lut(node_position, seg_list, data_type=np.uint32):
     IDs using a list of segment arrays and node positions.
 
     :param node_position: A numpy array representing the positions of nodes in a 3D space. It has shape
-    (N, 3), where N is the number of nodes and each row represents the x, y, and z coordinates of a node
+    (N, 3), where N is the number of nodes and each row represents the z, y, and x coordinates of a node
     :param seg_list: seg_list is a list of 3D arrays representing segments. Each segment is represented
     by a 3D array where each element corresponds to a voxel in the segment. The values in the array
     represent the segment ID for each voxel
@@ -180,7 +180,6 @@ def expected_run_length(
         skeleton_scores = res
 
     skeletons_erl = 0
-    db = {}
     db2 = {}
     db3 = {}
 
@@ -203,12 +202,10 @@ def expected_run_length(
             (skeleton_length/total_skeletons_length) *
             skeleton_erl
         )
-        db[skeleton_id] = skeleton_erl
         db2[skeleton_id] = skeleton_length
         db3[skeleton_id] = correct_edges_length
 
-    import pdb; pdb.set_trace()
-    # db3 = np.array(list(db3.values())); db2 = np.array(list(db2.values())); db = np.array(list(db.values()))
+    # db3 = np.array(list(db3.values())); db2 = np.array(list(db2.values())); print(sum(db3**2)/sum(db3), sum(db2**2)/sum(db2))
     if return_merge_split_stats:
         return skeletons_erl, merge_split_stats
     else:
@@ -312,7 +309,6 @@ def evaluate_skeletons(
     merging_segments_mask = np.isin(skeleton_segment[:, 1], merging_segments)
     merged_skeletons = skeleton_segment[:, 0][merging_segments_mask]
     merging_segments = set(merging_segments)
-    import pdb; pdb.set_trace()
     # skeleton_segment[skeleton_segment[:,1]==207]
 
     merges = {}

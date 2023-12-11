@@ -10,7 +10,7 @@ def test_AxonEM(gt_stats_path, pred_seg_path, num_chunk=1):
     and computes the ERL (Error Rate of Length) for the predicted segmentation.
 
     :param gt_stats_path: The path to the ground truth statistics file. This file contains information
-    about the ground truth graph and node voxel data
+    about the ground truth graph (vertex in physical unit) and resolution (used to convert node position to voxel)
     :param pred_seg_path: The `pred_seg_path` parameter is the file path to the predicted segmentation.
     It is the path to a file that contains the predicted segmentation data
     :param num_chunk: The parameter `num_chunk` is an optional parameter that specifies the number of
@@ -19,9 +19,12 @@ def test_AxonEM(gt_stats_path, pred_seg_path, num_chunk=1):
     reduce memory usage and improve performance, defaults to 1 (optional)
     """
     # gt_node_voxel: voxel location of gt skeleton points (Nx3)
-    gt_graph, gt_node_voxel = read_pkl(gt_stats_path)
+    gt_graph, gt_res = read_pkl(gt_stats_path)
 
     # node_segment_lut: seg id for each voxel location (N)
+    # graph: xyz order
+    # voxel: zyx order
+    gt_node_voxel = (gt_graph.nodes._nodes[:, -1:0:-1] // gt_res).astype(np.uint16)
     node_segment_lut = compute_node_segment_lut_low_mem(
         gt_node_voxel, [pred_seg_path], num_chunk
     )
