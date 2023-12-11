@@ -1,7 +1,7 @@
 import argparse
 import numpy as np
 import scipy.sparse as sp
-from .data_io import read_pkl, write_pkl
+from data_io import read_pkl, write_pkl
 
 # implement a light-weight networkx graph like class with npz backend
 # assumes fixed number of nodes and edges

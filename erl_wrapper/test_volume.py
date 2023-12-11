@@ -1,8 +1,8 @@
 import argparse
 import numpy as np
-from .data_io import read_vol, read_pkl
-from .skeleton import skeleton_to_networkx
-from .eval_erl import compute_node_segment_lut, compute_erl
+from data_io import read_vol, read_pkl
+from skeleton import skeleton_to_networkx
+from eval_erl import compute_node_segment_lut, compute_erl
 
 
 def test_volume(
@@ -10,11 +10,10 @@ def test_volume(
     skeleton_path,
     skeleton_unit,
     skeleton_resolution,
-    erl_merge_threshold,
 ):
     """
     The function `test_volume` takes in various inputs, including a segmentation path, a skeleton path,
-    and parameters related to units and thresholds, and performs computations to calculate the ERL
+    and parameters related to units, and performs computations to calculate the ERL
     (Error Rate of Length) for the given segmentation.
 
     :param seg_path: The path to the segmentation volume file
@@ -25,10 +24,6 @@ def test_volume(
     :param skeleton_resolution: The `skeleton_resolution` parameter represents the voxel size of the
     skeleton data. It is used to convert the node positions from physical units to voxel units if
     `skeleton_unit` is set to "voxel"
-    :param erl_merge_threshold: The `erl_merge_threshold` parameter is a threshold value used in the
-    computation of the ERL (Error Rate of Length) score. It determines the maximum distance at which two
-    segments can be merged into a single segment. Segments that are closer than this threshold will be
-    merged together
     """
 
     pred_seg = read_vol(seg_path)
@@ -45,7 +40,7 @@ def test_volume(
         )
 
     node_segment_lut = compute_node_segment_lut(all_nodes, [pred_seg])
-    scores = compute_erl(gt_graph, node_segment_lut, erl_merge_threshold)
+    scores = compute_erl(gt_graph, node_segment_lut)
     print(f"ERL for seg {seg_path}: {scores[0]}")
 
 
@@ -85,13 +80,6 @@ def get_arguments():
         help="resolution of ground truth skeleton",
         required=True,
     )
-    parser.add_argument(
-        "-m",
-        "--erl-merge-threshold",
-        type=int,
-        help="merge threshold for erl evaluation",
-        default=0,
-    )
     result_args = parser.parse_args()
     assert (
         "x" in result_args.skeleton_resolution
@@ -108,6 +96,5 @@ if __name__ == "__main__":
         args.seg_path,
         args.skeleton_path,
         args.skeleton_unit,
-        args.skeleton_resolution,
-        args.erl_merge_threshold,
+        args.skeleton_resolution
     )

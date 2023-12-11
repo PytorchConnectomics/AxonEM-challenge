@@ -1,7 +1,7 @@
 import argparse
-from .data_io import read_pkl
-from .eval_erl import compute_node_segment_lut_low_mem, compute_erl
-from .networkx_lite import *
+from data_io import read_pkl
+from eval_erl import compute_node_segment_lut_low_mem, compute_erl
+from networkx_lite import *
 
 
 def test_AxonEM(gt_stats_path, pred_seg_path, num_chunk=1):
@@ -18,15 +18,16 @@ def test_AxonEM(gt_stats_path, pred_seg_path, num_chunk=1):
     to divide the computation of the node segment lookup table into smaller chunks, which can help
     reduce memory usage and improve performance, defaults to 1 (optional)
     """
-    # get stats
+    # gt_node_voxel: voxel location of gt skeleton points (Nx3)
     gt_graph, gt_node_voxel = read_pkl(gt_stats_path)
 
+    # node_segment_lut: seg id for each voxel location (N)
     node_segment_lut = compute_node_segment_lut_low_mem(
         gt_node_voxel, [pred_seg_path], num_chunk
     )
+    
     # https://donglaiw.github.io/paper/2021_miccai_axonEM.pdf
-    # page 6: we add the "tolerance" threshold to alleviate the effect from skeletonization artifacts
-    scores = compute_erl(gt_graph, node_segment_lut, merge_threshold=50)
+    scores = compute_erl(gt_graph, node_segment_lut)
     print(f"ERL for seg {pred_seg_path}: {scores[0]}")
     return scores
 
