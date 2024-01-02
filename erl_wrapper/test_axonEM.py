@@ -21,10 +21,12 @@ def test_AxonEM(gt_stats_path, pred_seg_path, num_chunk=1):
     to divide the computation of the node segment lookup table into smaller chunks, which can help
     reduce memory usage and improve performance, defaults to 1 (optional)
     """
+    print("Load gt info")
     # gt_graph: node position in physical unit (Nx3)
     # gt_no_bg: binary mask for non-axons
     gt_graph, gt_res, gt_no_bg = read_pkl(gt_stats_path)
 
+    print("Compute prediction info")
     # node_segment_lut: seg id for each voxel location (N)
     # gt_graph: xyz order
     # voxel: zyx order
@@ -35,6 +37,7 @@ def test_AxonEM(gt_stats_path, pred_seg_path, num_chunk=1):
         num_chunk,
     )
 
+    print("Compute ERL")
     # https://donglaiw.github.io/paper/2021_miccai_axonEM.pdf
     scores = compute_erl(gt_graph, node_segment_lut, mask_segment_id)
     print(f"ERL for seg {pred_seg_path}: {scores[0]}")
