@@ -276,7 +276,7 @@ def evaluate_skeletons(
     # counted as wrong)
 
     # pairs of (skeleton, segment), one for each node
-    skeleton_segment = np.array(
+    skeleton_segment_all = np.array(
         [
             [data[skeleton_id_attribute], node_segment_lut[n]]
             for n, data in skeletons.nodes(data=True)
@@ -284,7 +284,9 @@ def evaluate_skeletons(
     )
 
     # unique pairs of (skeleton, segment)
-    skeleton_segment, count = np.unique(skeleton_segment, axis=0, return_counts=True)
+    skeleton_segment, count = np.unique(
+        skeleton_segment_all, axis=0, return_counts=True
+    )
     # AxonEM paper: only count the pairs that have intersections
     # more than merge_threshold amount of voxels
     skeleton_segment = skeleton_segment[count >= merge_threshold]
