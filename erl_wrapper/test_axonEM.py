@@ -1,6 +1,10 @@
 import argparse
 from data_io import read_pkl
-from eval_erl import compute_node_segment_lut_low_mem, compute_erl
+from eval_erl import (
+    compute_node_segment_lut,
+    compute_mask_segment_id,
+    compute_erl,
+)
 from networkx_lite import *
 
 
@@ -18,19 +22,22 @@ def test_AxonEM(gt_stats_path, pred_seg_path, num_chunk=1):
     to divide the computation of the node segment lookup table into smaller chunks, which can help
     reduce memory usage and improve performance, defaults to 1 (optional)
     """
-    # gt_node_voxel: voxel location of gt skeleton points (Nx3)
-    gt_graph, gt_res = read_pkl(gt_stats_path)
+    # gt_graph: node position in physical unit (Nx3)
+    # gt_no_bg: binary mask for non-axons
+    gt_graph, gt_res, gt_no_bg = read_pkl(gt_stats_path)
 
     # node_segment_lut: seg id for each voxel location (N)
-    # graph: xyz order
+    # gt_graph: xyz order
     # voxel: zyx order
-    gt_node_voxel = (gt_graph.nodes._nodes[:, -1:0:-1] // gt_res).astype(np.uint16)
-    node_segment_lut = compute_node_segment_lut_low_mem(
-        gt_node_voxel, [pred_seg_path], num_chunk
+    node_segment_lut = compute_node_segment_lut(
+        (gt_graph.nodes._nodes[:, -1:0:-1] // gt_res).astype(np.uint16),
+        pred_seg_path,
+        num_chunk,
     )
-    
+    mask_segment_id = compute_mask_segment_id(gt_no_bg, pred_seg_path, num_chunk)
+
     # https://donglaiw.github.io/paper/2021_miccai_axonEM.pdf
-    scores = compute_erl(gt_graph, node_segment_lut)
+    scores = compute_erl(gt_graph, node_segment_lut, mask_segment_id)
     print(f"ERL for seg {pred_seg_path}: {scores[0]}")
     return scores
 

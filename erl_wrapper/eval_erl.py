@@ -6,34 +6,7 @@ from funlib import evaluate
 from data_io import read_vol
 
 
-def compute_node_segment_lut(node_position, seg_list, data_type=np.uint32):
-    """
-    The function `compute_node_segment_lut` computes a lookup table that maps node positions to segment
-    IDs using a list of segment arrays and node positions.
-
-    :param node_position: A numpy array representing the positions of nodes in a 3D space. It has shape
-    (N, 3), where N is the number of nodes and each row represents the z, y, and x coordinates of a node
-    :param seg_list: seg_list is a list of 3D arrays representing segments. Each segment is represented
-    by a 3D array where each element corresponds to a voxel in the segment. The values in the array
-    represent the segment ID for each voxel
-    :param data_type: The `data_type` parameter specifies the data type of the elements in the
-    `node_segment_lut` array. In this case, it is set to `np.uint32`, which means that each element in
-    the array will be an unsigned 32-bit integer
-    :return: the variable "node_segment_lut", which is a list of numpy arrays.
-    """
-    node_segment_lut = [np.zeros([node_position.shape[0], 4], data_type)] * len(
-        seg_list
-    )
-    for seg_id, seg_item in enumerate(seg_list):
-        node_segment_lut[seg_id] = seg_item[
-            node_position[:, 0], node_position[:, 1], node_position[:, 2]
-        ]
-    return node_segment_lut
-
-
-def compute_node_segment_lut_low_mem(
-    node_position, seg_name_list, chunk_num=1, data_type=np.uint32
-):
+def compute_node_segment_lut(node_position, segment, chunk_num=1, data_type=np.uint32):
     """
     The function `compute_node_segment_lut_low_mem` is a low memory version of a lookup table
     computation for node segments in a 3D volume.
@@ -41,7 +14,39 @@ def compute_node_segment_lut_low_mem(
     :param node_position: A numpy array containing the coordinates of each node. The shape of the array
     is (N, 3), where N is the number of nodes and each row represents the (z, y, x) coordinates of a
     node
-    :param seg_name_list: A list of segment names, where each segment name is a string representing the
+    :param segment: either a 3D volume or a string representing the
+    name of a file containing segment data.
+    :param chunk_num: The parameter `chunk_num` is the number of chunks into which the volume is divided
+    for reading. It is used in the `read_vol` function to specify which chunk to read, defaults to 1
+    (optional)
+    :param data_type: The parameter `data_type` is the data type of the array used to store the node segment
+    lookup table. In this case, it is set to `np.uint32`, which means the array will store unsigned
+    32-bit integers
+    :return: a list of numpy arrays, where each array represents the node segment lookup table for a
+    specific segment.
+    """
+    if not isinstance(segment, str):
+        return segment[node_position[:, 0], node_position[:, 1], node_position[:, 2]]
+
+    assert ".h5" in segment
+    node_segment_lut = np.zeros(node_position.shape[0], data_type)
+    start_z = 0
+    for chunk_id in range(chunk_num):
+        seg = read_vol(segment, None, chunk_id, chunk_num)
+        last_z = start_z + seg.shape[0]
+        ind = (node_position[:, 0] >= start_z) * (node_position[:, 0] < last_z)
+        pts = node_position[ind]
+        node_segment_lut[ind] = seg[pts[:, 0] - start_z, pts[:, 1], pts[:, 2]]
+        start_z = last_z
+    return node_segment_lut
+
+
+def compute_mask_segment_id(mask, segment, chunk_num=1):
+    """
+    The function `compute_mask_segment_id` computes the list of segment ids that are valid in the mask
+
+    :param mask: A binary numpy array
+    :param segment: a string representing the
     name of a file containing segment data. The segment data is expected to be in the form of a 3D
     volume
     :param chunk_num: The parameter `chunk_num` is the number of chunks into which the volume is divided
@@ -53,25 +58,20 @@ def compute_node_segment_lut_low_mem(
     :return: a list of numpy arrays, where each array represents the node segment lookup table for a
     specific segment.
     """
-    node_segment_lut = [np.zeros(node_position.shape[0], data_type)] * len(
-        seg_name_list
-    )
-    for seg_id, seg_name in enumerate(seg_name_list):
-        assert ".h5" in seg_name
-        start_z = 0
-        for chunk_id in range(chunk_num):
-            seg = read_vol(seg_name, None, chunk_id, chunk_num)
-            last_z = start_z + seg.shape[0]
-            ind = (node_position[:, 0] >= start_z) * (node_position[:, 0] < last_z)
-            pts = node_position[ind]
-            node_segment_lut[seg_id][ind] = seg[
-                pts[:, 0] - start_z, pts[:, 1], pts[:, 2]
-            ]
-            start_z = last_z
-    return node_segment_lut
+    if not isinstance(segment, str):
+        return np.unique(segment[mask > 0])
+    assert ".h5" in segment
+    mask_segment_lut = [[]] * chunk_num
+    start_z = 0
+    for chunk_id in range(chunk_num):
+        seg = read_vol(segment, None, chunk_id, chunk_num)
+        last_z = start_z + seg.shape[0]
+        mask_segment_lut[chunk_id] = seg[mask[start_z:last_z] > 0]
+        start_z = last_z
+    return np.unique(np.concatenate(mask_segment_lut))
 
 
-def compute_erl(gt_graph, node_segment_lut):
+def compute_erl(gt_graph, node_segment_lut, mask_segment_id=None):
     """
     The function `compute_erl` calculates the expected run length (ERL) scores for a given ground truth
     graph and node segment lookup table.
@@ -80,29 +80,32 @@ def compute_erl(gt_graph, node_segment_lut):
     typically represented as a networkx graph
     :param node_segment_lut: A list of dictionaries where each dictionary represents a mapping between
     node IDs and segment IDs. Each dictionary corresponds to a different segment of the graph
+    :param mask_segment: segment ids that have false merges with non-background segments
     :return: a list of scores.
     """
-    scores = [None] * len(node_segment_lut)
-    for lid, lut in enumerate(node_segment_lut):
-        scores[lid] = expected_run_length(
-            skeletons=gt_graph,
-            skeleton_id_attribute="skeleton_id",
-            edge_length_attribute="length",
-            node_segment_lut=lut,
-            skeleton_position_attributes=["z", "y", "x"],
-        )
-    return scores
+
+    return expected_run_length(
+        skeletons=gt_graph,
+        skeleton_id_attribute="skeleton_id",
+        edge_length_attribute="length",
+        node_segment_lut=node_segment_lut,
+        mask_segment_id=mask_segment_id,
+        skeleton_position_attributes=["z", "y", "x"],
+    )
+
 
 # copy from https://github.com/funkelab/funlib.evaluate/blob/master/funlib/evaluate/run_length.py
 def expected_run_length(
-        skeletons,
-        skeleton_id_attribute,
-        edge_length_attribute,
-        node_segment_lut,
-        skeleton_lengths=None,
-        skeleton_position_attributes=None,
-        return_merge_split_stats=False):
-    '''Compute the expected run-length on skeletons, given a segmentation in
+    skeletons,
+    skeleton_id_attribute,
+    edge_length_attribute,
+    node_segment_lut,
+    mask_segment_id=None,
+    skeleton_lengths=None,
+    skeleton_position_attributes=None,
+    return_merge_split_stats=False,
+):
+    """Compute the expected run-length on skeletons, given a segmentation in
     the form of a node -> segment lookup table.
 
     Args:
@@ -152,27 +155,30 @@ def expected_run_length(
 
             The split stats are a dictionary mapping skeleton IDs to pairs of
             segment IDs, one pair for each split along the skeleton edges.
-    '''
+    """
 
     if skeleton_position_attributes is not None:
-
         if skeleton_lengths is not None:
             raise ValueError(
                 "If skeleton_position_attributes is given, skeleton_lengths"
-                "should not be given")
+                "should not be given"
+            )
 
         skeleton_lengths = get_skeleton_lengths(
             skeletons,
             skeleton_position_attributes,
             skeleton_id_attribute,
-            store_edge_length=edge_length_attribute)
+            store_edge_length=edge_length_attribute,
+        )
 
     total_skeletons_length = np.sum([l for _, l in skeleton_lengths.items()])
     res = evaluate_skeletons(
         skeletons,
         skeleton_id_attribute,
         node_segment_lut,
-        return_merge_split_stats=return_merge_split_stats)
+        mask_segment_id,
+        return_merge_split_stats=return_merge_split_stats,
+    )
 
     if return_merge_split_stats:
         skeleton_scores, merge_split_stats = res
@@ -184,29 +190,25 @@ def expected_run_length(
     db3 = {}
 
     for skeleton_id, scores in skeleton_scores.items():
-
         skeleton_length = skeleton_lengths[skeleton_id]
         skeleton_erl = 0
         correct_edges_length = 0
         for segment_id, correct_edges in scores.correct_edges.items():
-
-            correct_edges_length = np.sum([
-                skeletons.edges[e][edge_length_attribute]
-                for e in correct_edges])
-
-            skeleton_erl += (
-                correct_edges_length *
-                (correct_edges_length/skeleton_length)
+            correct_edges_length = np.sum(
+                [skeletons.edges[e][edge_length_attribute] for e in correct_edges]
             )
-        skeletons_erl += (
-            (skeleton_length/total_skeletons_length) *
-            skeleton_erl
-        )
+
+            skeleton_erl += correct_edges_length * (
+                correct_edges_length / skeleton_length
+            )
+        skeletons_erl += (skeleton_length / total_skeletons_length) * skeleton_erl
         db2[skeleton_id] = skeleton_length
         db3[skeleton_id] = correct_edges_length
 
     # db3 = np.array(list(db3.values())); db2 = np.array(list(db2.values())); print(sum(db3**2)/sum(db3), sum(db2**2)/sum(db2))
-    import pdb; pdb.set_trace()
+    import pdb
+
+    pdb.set_trace()
     if return_merge_split_stats:
         return skeletons_erl, merge_split_stats
     else:
@@ -214,11 +216,12 @@ def expected_run_length(
 
 
 def get_skeleton_lengths(
-        skeletons,
-        skeleton_position_attributes,
-        skeleton_id_attribute,
-        store_edge_length=None):
-    '''Get the length of each skeleton in the given graph.
+    skeletons,
+    skeleton_position_attributes,
+    skeleton_id_attribute,
+    store_edge_length=None,
+):
+    """Get the length of each skeleton in the given graph.
 
     Args:
 
@@ -238,21 +241,18 @@ def get_skeleton_lengths(
         store_edge_length (optional):
 
             If given, stores the length of an edge in this edge attribute.
-    '''
+    """
 
     node_positions = {
         node: np.array(
-            [
-                skeletons.nodes[node][d]
-                for d in skeleton_position_attributes
-            ],
-            dtype=np.float32)
+            [skeletons.nodes[node][d] for d in skeleton_position_attributes],
+            dtype=np.float32,
+        )
         for node in skeletons.nodes()
     }
 
     skeleton_lengths = {}
     for u, v, data in skeletons.edges(data=True):
-
         skeleton_id = skeletons.nodes[u][skeleton_id_attribute]
 
         if skeleton_id not in skeleton_lengths:
@@ -270,10 +270,8 @@ def get_skeleton_lengths(
     return skeleton_lengths
 
 
-class SkeletonScores():
-
+class SkeletonScores:
     def __init__(self):
-
         self.ommitted = 0
         self.split = 0
         self.merged = 0
@@ -282,30 +280,39 @@ class SkeletonScores():
 
 
 def evaluate_skeletons(
-        skeletons,
-        skeleton_id_attribute,
-        node_segment_lut,
-        return_merge_split_stats=False):
-
+    skeletons,
+    skeleton_id_attribute,
+    node_segment_lut,
+    mask_segment_id,
+    return_merge_split_stats=False,
+):
     # find all merging segments (skeleton edges on merging segments will be
     # counted as wrong)
 
     # pairs of (skeleton, segment), one for each node
-    skeleton_segment = np.array([
-        [data[skeleton_id_attribute], node_segment_lut[n]]
-        for n, data in skeletons.nodes(data=True)
-    ])
+    skeleton_segment = np.array(
+        [
+            [data[skeleton_id_attribute], node_segment_lut[n]]
+            for n, data in skeletons.nodes(data=True)
+        ]
+    )
 
     # unique pairs of (skeleton, segment)
     skeleton_segment, count = np.unique(skeleton_segment, axis=0, return_counts=True)
 
     # number of times that a segment was mapped to a skeleton
     segments, num_segment_skeletons = np.unique(
-        skeleton_segment[:, 1],
-        return_counts=True)
+        skeleton_segment[:, 1], return_counts=True
+    )
 
     # all segments that merge at least two skeletons
     merging_segments = segments[num_segment_skeletons > 1]
+    if mask_segment_id is not None:
+        merging_segments = np.unique(
+            np.concatenate([merging_segments, mask_segment_id])
+        )
+
+    print("merging seg:", merging_segments)
 
     merging_segments_mask = np.isin(skeleton_segment[:, 1], merging_segments)
     merged_skeletons = skeleton_segment[:, 0][merging_segments_mask]
@@ -316,7 +323,6 @@ def evaluate_skeletons(
     splits = {}
 
     if return_merge_split_stats:
-
         merged_segments = skeleton_segment[:, 1][merging_segments_mask]
 
         for segment, skeleton in zip(merged_segments, merged_skeletons):
@@ -329,7 +335,6 @@ def evaluate_skeletons(
     skeleton_scores = {}
 
     for u, v in skeletons.edges():
-
         skeleton_id = skeletons.nodes[u][skeleton_id_attribute]
         segment_u = node_segment_lut[u]
         segment_v = node_segment_lut[v]
@@ -368,14 +373,9 @@ def evaluate_skeletons(
         scores.correct_edges[segment].append((u, v))
 
     if return_merge_split_stats:
-
-        merge_split_stats = {
-            'merge_stats': merges,
-            'split_stats': splits
-        }
+        merge_split_stats = {"merge_stats": merges, "split_stats": splits}
 
         return skeleton_scores, merge_split_stats
 
     else:
-
         return skeleton_scores

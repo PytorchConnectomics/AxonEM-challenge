@@ -164,34 +164,11 @@ def convert_networkx_to_lite(networkx_graph):
     """
     The function converts a NetworkX graph to a NetworkXGraphLite graph.
 
-    :param networkx_graph: The `networkx_graph` parameter is a graph object from the NetworkX library.
-    It represents a graph with nodes and edges, where each node can have attributes and each edge can
-    have attributes
+    :param networkx_graph: The `networkx_graph` parameter is a graph object
+    from the NetworkX library. It represents a graph with nodes and edges,
+    where each node can have attributes and each edge can have attributes
     :return: a NetworkXGraphLite object.
     """
     networkx_lite_graph = NetworkXGraphLite(["skeleton_id", "z", "y", "x"], "length")
     networkx_lite_graph.load_graph(networkx_graph)
     return networkx_lite_graph
-
-
-def patch_axonEM_stats(old_pkl, new_pkl):
-    """
-    The function `patch_axonEM_stats` reads a pickle file, converts a graph to a lite version, and
-    writes the updated data to a new pickle file.
-
-    :param old_pkl: The path to the old pickle file that contains the data to be patched
-    :param new_pkl: The `new_pkl` parameter is the name or path of the new pickle file that you want to
-    create or overwrite
-    """
-    gt_graph, node_out = read_pkl(old_pkl)
-    gt_graph_lite = convert_networkx_to_lite(gt_graph)
-    write_pkl(new_pkl, [gt_graph_lite, node_out])
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Tool to patch gt_stats pkl file")
-    parser.add_argument("--old_pkl", type=str, help="old pkl file")
-    parser.add_argument("--new_pkl", type=str, help="new pkl file")
-    args = parser.parse_args()
-
-    patch_axonEM_stats(args.old_pkl, args.new_pkl)
