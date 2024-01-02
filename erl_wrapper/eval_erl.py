@@ -316,13 +316,18 @@ def evaluate_skeletons(
             np.concatenate([merging_segments, mask_segment_id])
         )
 
-    print("merging seg:", merging_segments)
 
     merging_segments_mask = np.isin(skeleton_segment[:, 1], merging_segments)
     merged_skeletons = skeleton_segment[:, 0][merging_segments_mask]
     merging_segments = set(merging_segments)
     # skeleton_segment[skeleton_segment[:,1]==207]
 
+    #print("merging seg:", merging_segments)
+    print("merging:", skeleton_segment[merging_segments_mask].T)
+    print("merging seg:", np.unique(skeleton_segment[:, 1][merging_segments_mask]))
+    #print("merging skel:", np.unique(merged_skeletons))
+    # skeleton_segment[skeleton_segment[:, 1]==57, 0]
+    import pdb; pdb.set_trace()
     merges = {}
     splits = {}
 
