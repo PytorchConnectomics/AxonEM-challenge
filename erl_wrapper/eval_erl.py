@@ -5,7 +5,9 @@ import numpy as np
 from data_io import read_vol
 
 
-def compute_node_segment_lut(node_position, segment, chunk_num=1, data_type=np.uint32):
+def compute_segment_lut(
+    segment, node_position, mask=None, chunk_num=1, data_type=np.uint32
+):
     """
     The function `compute_node_segment_lut_low_mem` is a low memory version of a lookup table
     computation for node segments in a 3D volume.
@@ -25,54 +27,30 @@ def compute_node_segment_lut(node_position, segment, chunk_num=1, data_type=np.u
     specific segment.
     """
     if not isinstance(segment, str):
-        return segment[node_position[:, 0], node_position[:, 1], node_position[:, 2]]
-
-    assert ".h5" in segment
-    node_segment_lut = np.zeros(node_position.shape[0], data_type)
-    start_z = 0
-    for chunk_id in range(chunk_num):
-        seg = read_vol(segment, None, chunk_id, chunk_num)
-        last_z = start_z + seg.shape[0]
-        ind = (node_position[:, 0] >= start_z) * (node_position[:, 0] < last_z)
-        pts = node_position[ind]
-        node_segment_lut[ind] = seg[pts[:, 0] - start_z, pts[:, 1], pts[:, 2]]
-        start_z = last_z
-    return node_segment_lut
-
-
-def compute_mask_segment_id(mask, segment, chunk_num=1):
-    """
-    The function `compute_mask_segment_id` computes the list of segment ids that are valid in the mask
-
-    :param mask: A binary numpy array
-    :param segment: a string representing the
-    name of a file containing segment data. The segment data is expected to be in the form of a 3D
-    volume
-    :param chunk_num: The parameter `chunk_num` is the number of chunks into which the volume is divided
-    for reading. It is used in the `read_vol` function to specify which chunk to read, defaults to 1
-    (optional)
-    :param data_type: The parameter `data_type` is the data type of the array used to store the node segment
-    lookup table. In this case, it is set to `np.uint32`, which means the array will store unsigned
-    32-bit integers
-    :return: a list of numpy arrays, where each array represents the node segment lookup table for a
-    specific segment.
-    """
-    if not isinstance(segment, str):
-        return np.unique(segment[mask > 0])
-    assert ".h5" in segment
-    mask_segment_lut = [[]] * chunk_num
-    start_z = 0
-    for chunk_id in range(chunk_num):
-        segment_z = read_vol(segment, None, chunk_id, chunk_num)
-        if not isinstance(mask, str):
-            last_z = start_z + segment_z.shape[0]
-            mask_z = mask[start_z:last_z]
+        node_lut = segment[
+            node_position[:, 0], node_position[:, 1], node_position[:, 2]
+        ]
+        mask_id = np.unique(segment[mask > 0]) if mask is not None else []
+    else:
+        assert ".h5" in segment
+        node_lut = np.zeros(node_position.shape[0], data_type)
+        mask_id = [[]] * chunk_num
+        start_z = 0
+        for chunk_id in range(chunk_num):
+            seg = read_vol(segment, None, chunk_id, chunk_num)
+            last_z = start_z + seg.shape[0]
+            ind = (node_position[:, 0] >= start_z) * (node_position[:, 0] < last_z)
+            pts = node_position[ind]
+            node_lut[ind] = seg[pts[:, 0] - start_z, pts[:, 1], pts[:, 2]]
+            if mask is not None:
+                if isinstance(mask, str):
+                    mask_z = read_vol(mask, None, chunk_id, chunk_num)
+                else:
+                    mask_z = mask[start_z:last_z]
+                mask_id[chunk_id] = seg[mask_z > 0]
             start_z = last_z
-        else:
-            mask_z = read_vol(mask, None, chunk_id, chunk_num)
-        mask_segment_lut[chunk_id] = segment_z[mask_z > 0]
-
-    return np.unique(np.concatenate(mask_segment_lut))
+        mask_id = np.unique(np.concatenate(mask_id))
+    return node_lut, mask_id
 
 
 def compute_erl(gt_graph, node_segment_lut, mask_segment_id=None):

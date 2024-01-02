@@ -1,8 +1,7 @@
 import argparse
 from data_io import read_pkl
 from eval_erl import (
-    compute_node_segment_lut,
-    compute_mask_segment_id,
+    compute_segment_lut,
     compute_erl,
 )
 from networkx_lite import *
@@ -29,12 +28,12 @@ def test_AxonEM(gt_stats_path, pred_seg_path, num_chunk=1):
     # node_segment_lut: seg id for each voxel location (N)
     # gt_graph: xyz order
     # voxel: zyx order
-    node_segment_lut = compute_node_segment_lut(
-        (gt_graph.nodes._nodes[:, -1:0:-1] // gt_res).astype(np.uint16),
+    node_segment_lut, mask_segment_id = compute_segment_lut(
         pred_seg_path,
+        (gt_graph.nodes._nodes[:, -1:0:-1] // gt_res).astype(np.uint16),
+        gt_no_bg,
         num_chunk,
     )
-    mask_segment_id = compute_mask_segment_id(gt_no_bg, pred_seg_path, num_chunk)
 
     # https://donglaiw.github.io/paper/2021_miccai_axonEM.pdf
     scores = compute_erl(gt_graph, node_segment_lut, mask_segment_id)
