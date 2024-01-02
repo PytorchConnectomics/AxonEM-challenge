@@ -30,7 +30,7 @@ def compute_segment_lut(
         node_lut = segment[
             node_position[:, 0], node_position[:, 1], node_position[:, 2]
         ]
-        mask_id = np.unique(segment[mask > 0]) if mask is not None else []
+        mask_id = segment[mask > 0] if mask is not None else []
     else:
         assert ".h5" in segment
         node_lut = np.zeros(node_position.shape[0], data_type)
@@ -49,11 +49,11 @@ def compute_segment_lut(
                     mask_z = mask[start_z:last_z]
                 mask_id[chunk_id] = seg[mask_z > 0]
             start_z = last_z
-        mask_id = np.unique(np.concatenate(mask_id))
+        mask_id = np.concatenate(mask_id)
     return node_lut, mask_id
 
 
-def compute_erl(gt_graph, node_segment_lut, mask_segment_id=None):
+def compute_erl(gt_graph, node_segment_lut, mask_segment_id=None, merge_threshold=50):
     """
     The function `compute_erl` calculates the expected run length (ERL) scores for a given ground truth
     graph and node segment lookup table.
@@ -72,6 +72,7 @@ def compute_erl(gt_graph, node_segment_lut, mask_segment_id=None):
         edge_length_attribute="length",
         node_segment_lut=node_segment_lut,
         mask_segment_id=mask_segment_id,
+        merge_threshold=merge_threshold,
         skeleton_position_attributes=["z", "y", "x"],
     )
 
@@ -296,8 +297,9 @@ def evaluate_skeletons(
     # all segments that merge at least two skeletons
     merging_segments = segments[num_segment_skeletons > 1]
     if mask_segment_id is not None:
+        mask_id, mask_count = np.unique(mask_segment_id, return_counts=True)
         merging_segments = np.unique(
-            np.concatenate([merging_segments, mask_segment_id])
+            np.concatenate([merging_segments, mask_id[mask_count > merge_threshold]])
         )
 
     merging_segments_mask = np.isin(skeleton_segment[:, 1], merging_segments)

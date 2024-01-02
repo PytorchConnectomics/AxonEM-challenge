@@ -7,7 +7,7 @@ from eval_erl import (
 from networkx_lite import *
 
 
-def test_AxonEM(gt_stats_path, pred_seg_path, num_chunk=1):
+def test_AxonEM(gt_stats_path, pred_seg_path, num_chunk, merge_threshold):
     """
     The function `test_AxonEM` takes in the paths to ground truth statistics and predicted segmentation,
     and computes the ERL (Error Rate of Length) for the predicted segmentation.
@@ -39,7 +39,7 @@ def test_AxonEM(gt_stats_path, pred_seg_path, num_chunk=1):
 
     print("Compute ERL")
     # https://donglaiw.github.io/paper/2021_miccai_axonEM.pdf
-    scores = compute_erl(gt_graph, node_segment_lut, mask_segment_id)
+    scores = compute_erl(gt_graph, node_segment_lut, mask_segment_id, merge_threshold)
     print(f"ERL for seg {pred_seg_path}: {scores[0]}")
     return scores
 
@@ -73,6 +73,13 @@ def get_arguments():
         help="number of chunks to process the volume",
         default=1,
     )
+    parser.add_argument(
+        "-m",
+        "--merge-threshold",
+        type=int,
+        help="threshold number of voxels to be a false merge",
+        default=50,
+    )
     return parser.parse_args()
 
 
@@ -80,4 +87,4 @@ if __name__ == "__main__":
     # python test_axonEM.py -s db/30um_human/axon_release/gt_16nm.h5 -g db/30um_human/axon_release/gt_16nm_skel_stats.p -c 1
     args = get_arguments()
     # compute erl
-    test_AxonEM(args.gt_stats_path, args.seg_path, args.num_chunk)
+    test_AxonEM(args.gt_stats_path, args.seg_path, args.num_chunk, args.merge_threshold)
