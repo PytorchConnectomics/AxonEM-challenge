@@ -83,6 +83,7 @@ def expected_run_length(
     edge_length_attribute,
     node_segment_lut,
     mask_segment_id=None,
+    merge_threshold=50,
     skeleton_lengths=None,
     skeleton_position_attributes=None,
     return_merge_split_stats=False,
@@ -159,6 +160,7 @@ def expected_run_length(
         skeleton_id_attribute,
         node_segment_lut,
         mask_segment_id,
+        merge_threshold,
         return_merge_split_stats=return_merge_split_stats,
     )
 
@@ -266,6 +268,7 @@ def evaluate_skeletons(
     skeleton_id_attribute,
     node_segment_lut,
     mask_segment_id,
+    merge_threshold,
     return_merge_split_stats=False,
 ):
     # find all merging segments (skeleton edges on merging segments will be
@@ -281,6 +284,9 @@ def evaluate_skeletons(
 
     # unique pairs of (skeleton, segment)
     skeleton_segment, count = np.unique(skeleton_segment, axis=0, return_counts=True)
+    # AxonEM paper: only count the pairs that have intersections
+    # more than merge_threshold amount of voxels
+    skeleton_segment = skeleton_segment[count >= merge_threshold]
 
     # number of times that a segment was mapped to a skeleton
     segments, num_segment_skeletons = np.unique(
@@ -294,18 +300,19 @@ def evaluate_skeletons(
             np.concatenate([merging_segments, mask_segment_id])
         )
 
-
     merging_segments_mask = np.isin(skeleton_segment[:, 1], merging_segments)
     merged_skeletons = skeleton_segment[:, 0][merging_segments_mask]
     merging_segments = set(merging_segments)
     # skeleton_segment[skeleton_segment[:,1]==207]
 
-    #print("merging seg:", merging_segments)
+    # print("merging seg:", merging_segments)
     print("merging:", skeleton_segment[merging_segments_mask].T)
     print("merging seg:", np.unique(skeleton_segment[:, 1][merging_segments_mask]))
-    #print("merging skel:", np.unique(merged_skeletons))
+    # print("merging skel:", np.unique(merged_skeletons))
     # skeleton_segment[skeleton_segment[:, 1]==57, 0]
-    import pdb; pdb.set_trace()
+    import pdb
+
+    pdb.set_trace()
     merges = {}
     splits = {}
 
