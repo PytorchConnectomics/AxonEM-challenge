@@ -14,8 +14,8 @@ from data_io import read_pkl, write_pkl
 # return u, v, data, where data is a dict of edge attributes which can be SET
 
 
-# The NetworkXGraphLite class is a lightweight version of the NetworkXGraph class.
 class NetworkXGraphLite:
+    # The NetworkXGraphLite class is a lightweight version of the NetworkXGraph class.
     def __init__(
         self,
         node_attributes=["skeleton_id", "z", "y", "x"],

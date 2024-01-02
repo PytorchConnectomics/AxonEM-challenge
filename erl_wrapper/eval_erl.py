@@ -2,7 +2,6 @@
 # step 2: compute the ERL from the lookup table and the gt graph
 # graph: networkx by default. To save memory for grand-challenge evaluation, we use netowrkx_lite
 import numpy as np
-from funlib import evaluate
 from data_io import read_vol
 
 
@@ -64,10 +63,15 @@ def compute_mask_segment_id(mask, segment, chunk_num=1):
     mask_segment_lut = [[]] * chunk_num
     start_z = 0
     for chunk_id in range(chunk_num):
-        seg = read_vol(segment, None, chunk_id, chunk_num)
-        last_z = start_z + seg.shape[0]
-        mask_segment_lut[chunk_id] = seg[mask[start_z:last_z] > 0]
-        start_z = last_z
+        segment_z = read_vol(segment, None, chunk_id, chunk_num)
+        if not isinstance(mask, str):
+            last_z = start_z + segment_z.shape[0]
+            mask_z = mask[start_z:last_z]
+            start_z = last_z
+        else:
+            mask_z = read_vol(mask, None, chunk_id, chunk_num)
+        mask_segment_lut[chunk_id] = segment_z[mask_z > 0]
+
     return np.unique(np.concatenate(mask_segment_lut))
 
 
