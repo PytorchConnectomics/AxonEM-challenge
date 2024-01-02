@@ -187,7 +187,7 @@ def expected_run_length(
 
         skeleton_length = skeleton_lengths[skeleton_id]
         skeleton_erl = 0
-
+        correct_edges_length = 0
         for segment_id, correct_edges in scores.correct_edges.items():
 
             correct_edges_length = np.sum([
@@ -206,6 +206,7 @@ def expected_run_length(
         db3[skeleton_id] = correct_edges_length
 
     # db3 = np.array(list(db3.values())); db2 = np.array(list(db2.values())); print(sum(db3**2)/sum(db3), sum(db2**2)/sum(db2))
+    import pdb; pdb.set_trace()
     if return_merge_split_stats:
         return skeletons_erl, merge_split_stats
     else:

@@ -1,8 +1,8 @@
 import numpy as np
 import os
 import json
-from challenge_eval.test_axonEM import test_AxonEM
-from challenge_eval.networkx_lite import *
+from erl_wrapper.test_axonEM import test_AxonEM
+from erl_wrapper.networkx_lite import *
 
 from evalutils.evalutils import (
     DEFAULT_INPUT_PATH,
