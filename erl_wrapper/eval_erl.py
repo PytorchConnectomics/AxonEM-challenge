@@ -173,6 +173,7 @@ def expected_run_length(
     skeletons_erl = 0
     db2 = {}
     db3 = {}
+    db4 = {}
 
     for skeleton_id, scores in skeleton_scores.items():
         skeleton_length = skeleton_lengths[skeleton_id]
@@ -189,6 +190,7 @@ def expected_run_length(
         skeletons_erl += (skeleton_length / total_skeletons_length) * skeleton_erl
         db2[skeleton_id] = skeleton_length
         db3[skeleton_id] = correct_edges_length
+        db4[skeleton_id] = skeleton_erl
 
     # db3 = np.array(list(db3.values())); db2 = np.array(list(db2.values())); print(sum(db3**2)/sum(db3), sum(db2**2)/sum(db2))
     import pdb
@@ -310,13 +312,10 @@ def evaluate_skeletons(
     # skeleton_segment[skeleton_segment[:,1]==207]
 
     # print("merging seg:", merging_segments)
-    print("merging:", skeleton_segment[merging_segments_mask].T)
-    print("merging seg:", np.unique(skeleton_segment[:, 1][merging_segments_mask]))
+    # print("merging:", skeleton_segment[merging_segments_mask].T)
+    # print("merging seg:", np.unique(skeleton_segment[:, 1][merging_segments_mask]))
     # print("merging skel:", np.unique(merged_skeletons))
     # skeleton_segment[skeleton_segment[:, 1]==57, 0]
-    import pdb
-
-    pdb.set_trace()
     merges = {}
     splits = {}
 
