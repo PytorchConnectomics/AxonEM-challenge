@@ -53,7 +53,13 @@ def compute_segment_lut(
     return node_lut, mask_id
 
 
-def compute_erl(gt_graph, node_segment_lut, mask_segment_id=None, merge_threshold=50):
+def compute_erl(
+    gt_graph,
+    node_segment_lut,
+    mask_segment_id=None,
+    merge_threshold=0,
+    erl_intervals=None,
+):
     """
     The function `compute_erl` calculates the expected run length (ERL) scores for a given ground truth
     graph and node segment lookup table.
@@ -73,6 +79,7 @@ def compute_erl(gt_graph, node_segment_lut, mask_segment_id=None, merge_threshol
         node_segment_lut=node_segment_lut,
         mask_segment_id=mask_segment_id,
         merge_threshold=merge_threshold,
+        erl_intervals=erl_intervals,
         skeleton_position_attributes=["z", "y", "x"],
     )
 
@@ -84,7 +91,8 @@ def expected_run_length(
     edge_length_attribute,
     node_segment_lut,
     mask_segment_id=None,
-    merge_threshold=50,
+    merge_threshold=0,
+    erl_intervals=None,
     skeleton_lengths=None,
     skeleton_position_attributes=None,
     return_merge_split_stats=False,
@@ -140,7 +148,6 @@ def expected_run_length(
             The split stats are a dictionary mapping skeleton IDs to pairs of
             segment IDs, one pair for each split along the skeleton edges.
     """
-
     if skeleton_position_attributes is not None:
         if skeleton_lengths is not None:
             raise ValueError(
@@ -155,7 +162,6 @@ def expected_run_length(
             store_edge_length=edge_length_attribute,
         )
 
-    total_skeletons_length = np.sum([l for _, l in skeleton_lengths.items()])
     res = evaluate_skeletons(
         skeletons,
         skeleton_id_attribute,
@@ -170,11 +176,7 @@ def expected_run_length(
     else:
         skeleton_scores = res
 
-    skeletons_erl = 0
-    db2 = {}
-    db3 = {}
-    db4 = {}
-
+    skeleton_erls = {}
     for skeleton_id, scores in skeleton_scores.items():
         skeleton_length = skeleton_lengths[skeleton_id]
         skeleton_erl = 0
@@ -187,19 +189,30 @@ def expected_run_length(
             skeleton_erl += correct_edges_length * (
                 correct_edges_length / skeleton_length
             )
-        skeletons_erl += (skeleton_length / total_skeletons_length) * skeleton_erl
-        db2[skeleton_id] = skeleton_length
-        db3[skeleton_id] = correct_edges_length
-        db4[skeleton_id] = skeleton_erl
+        skeleton_erls[skeleton_id] = skeleton_erl
 
-    # db3 = np.array(list(db3.values())); db2 = np.array(list(db2.values())); print(sum(db3**2)/sum(db3), sum(db2**2)/sum(db2))
-    import pdb
+    skeleton_lengths = np.array(list(skeleton_lengths.values()))
+    skeleton_erls = np.array(list(skeleton_erls.values()))
+    erl_weighted = skeleton_length * skeleton_erls
+    erl_all = (erl_weighted / skeleton_lengths.sum()).sum()
 
-    pdb.set_trace()
-    if return_merge_split_stats:
-        return skeletons_erl, merge_split_stats
+    if erl_intervals is not None:
+        erl = np.zeros(len(erl_intervals))
+        erl[0] = erl_all
+        for i in range(1, len(skeletons_erl)):
+            skeleton_index = (skeleton_lengths >= erl_intervals[i - 1]) * (
+                skeleton_lengths < erl_intervals[i]
+            )
+            erl[i] = sum(
+                erl_weighted[skeleton_index] / skeleton_lengths[skeleton_index].sum()
+            )
     else:
-        return skeletons_erl
+        erl = erl_all
+
+    if return_merge_split_stats:
+        return erl, merge_split_stats
+    else:
+        return erl
 
 
 def get_skeleton_lengths(
@@ -316,6 +329,7 @@ def evaluate_skeletons(
     # print("merging seg:", np.unique(skeleton_segment[:, 1][merging_segments_mask]))
     # print("merging skel:", np.unique(merged_skeletons))
     # skeleton_segment[skeleton_segment[:, 1]==57, 0]
+    # np.unique(skeleton_segment_all[skeleton_segment_all[:, 1]==1021,0])
     merges = {}
     splits = {}
 
