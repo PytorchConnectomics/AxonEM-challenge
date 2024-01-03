@@ -30,7 +30,11 @@ def compute_segment_lut(
         node_lut = segment[
             node_position[:, 0], node_position[:, 1], node_position[:, 2]
         ]
-        mask_id = segment[mask > 0] if mask is not None else []
+        mask_id = []
+        if mask is not None:
+            if isinstance(mask, str):
+                mask = read_vol(mask)
+            mask_id = segment[mask > 0]
     else:
         assert ".h5" in segment
         node_lut = np.zeros(node_position.shape[0], data_type)
@@ -49,6 +53,10 @@ def compute_segment_lut(
                     mask_z = mask[start_z:last_z]
                 mask_id[chunk_id] = seg[mask_z > 0]
             start_z = last_z
+        # remove irrelevant seg ids (not used by nodes)
+        node_lut_unique = np.unique(node_lut)
+        for chunk_id in range(chunk_num):
+            mask_id[chunk_id] = mask_id[chunk_id][np.in1d(mask_id[chunk_id], node_lut_unique)]
         mask_id = np.concatenate(mask_id)
     return node_lut, mask_id
 
@@ -193,21 +201,25 @@ def expected_run_length(
 
     skeleton_lengths = np.array(list(skeleton_lengths.values()))
     skeleton_erls = np.array(list(skeleton_erls.values()))
-    erl_weighted = skeleton_length * skeleton_erls
+    erl_weighted = skeleton_lengths * skeleton_erls
+    skel_weighted = skeleton_lengths * skeleton_lengths
     skeleton_length_all = skeleton_lengths.sum()
     erl_all = (erl_weighted / skeleton_length_all).sum()
+    skel_all = (skel_weighted / skeleton_length_all).sum()
+    import pdb; pdb.set_trace()
 
     if erl_intervals is not None:
         erl = np.zeros([len(erl_intervals), 2])
-        erl[0] = [erl_all, skeleton_length_all]
-        for i in range(1, len(skeletons_erl)):
+        erl[0] = [erl_all, skel_all]
+        for i in range(1, len(erl_intervals)):
             skeleton_index = (skeleton_lengths >= erl_intervals[i - 1]) * (
                 skeleton_lengths < erl_intervals[i]
             )
-            erl[i, 1] = skeleton_lengths[skeleton_index].sum()
-            erl[i, 0] = sum(erl_weighted[skeleton_index] / erl[i, 1])
+            selected_length = skeleton_lengths[skeleton_index].sum()
+            erl[i, 0] = sum(erl_weighted[skeleton_index] / selected_length)
+            erl[i, 1] = sum(skel_weighted[skeleton_index] / selected_length)
     else:
-        erl = [erl_all, skeleton_length_all]
+        erl = [erl_all, skel_all]
 
     if return_merge_split_stats:
         return erl, merge_split_stats
@@ -322,7 +334,6 @@ def evaluate_skeletons(
     merging_segments_mask = np.isin(skeleton_segment[:, 1], merging_segments)
     merged_skeletons = skeleton_segment[:, 0][merging_segments_mask]
     merging_segments = set(merging_segments)
-    import pdb; pdb.set_trace()
     # skeleton_segment[skeleton_segment[:,1]==207]
 
     # print("merging seg:", merging_segments)

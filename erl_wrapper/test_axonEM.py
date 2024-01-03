@@ -8,7 +8,7 @@ from networkx_lite import *
 
 
 def test_AxonEM(
-    gt_stats_path, pred_seg_path, num_chunk, merge_threshold, erl_intervals
+    gt_stats_path, gt_mask_path, pred_seg_path, num_chunk, merge_threshold, erl_intervals
 ):
     """
     The function `test_AxonEM` takes in the paths to ground truth statistics and predicted segmentation,
@@ -26,8 +26,7 @@ def test_AxonEM(
     print("Load gt info")
     # gt_graph: node position in physical unit (Nx3)
     # gt_no_bg: binary mask for non-axons
-    gt_graph, gt_res, gt_no_bg = read_pkl(gt_stats_path)
-
+    gt_graph, gt_res = read_pkl(gt_stats_path)
     print("Compute prediction info")
     # node_segment_lut: seg id for each voxel location (N)
     # gt_graph: xyz order
@@ -35,7 +34,7 @@ def test_AxonEM(
     node_segment_lut, mask_segment_id = compute_segment_lut(
         pred_seg_path,
         (gt_graph.nodes._nodes[:, -1:0:-1] // gt_res).astype(np.uint16),
-        gt_no_bg,
+        gt_mask_path,
         num_chunk,
     )
 
@@ -71,6 +70,14 @@ def get_arguments():
         default="",
     )
     parser.add_argument(
+        "-m",
+        "--gt-mask-path",
+        type=str,
+        help="path to ground truth no-background mask",
+        default="",
+    )
+
+    parser.add_argument(
         "-c",
         "--num-chunk",
         type=int,
@@ -78,7 +85,7 @@ def get_arguments():
         default=1,
     )
     parser.add_argument(
-        "-m",
+        "-mt",
         "--merge-threshold",
         type=int,
         help="threshold number of voxels to be a false merge",
@@ -88,10 +95,13 @@ def get_arguments():
         "-i",
         "--erl-intervals",
         type=str,
-        help="compute erl for each range",
-        default="0-20000-40000-150000",
+        help="compute erl for each range. e.g., 0-20000-40000-150000",
+        default="",
     )
     args = parser.parse_args()
+
+    if len(args.gt_mask_path) == 0:
+        args.gt_mask_path = None
     args.erl_intervals = (
         [int(x) for x in args.erl_intervals.split("-")]
         if "-" in args.erl_intervals
@@ -107,6 +117,7 @@ if __name__ == "__main__":
     # compute erl
     test_AxonEM(
         args.gt_stats_path,
+        args.gt_mask_path,
         args.seg_path,
         args.num_chunk,
         args.merge_threshold,
