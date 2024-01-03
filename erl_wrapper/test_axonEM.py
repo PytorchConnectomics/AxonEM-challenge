@@ -44,7 +44,7 @@ def test_AxonEM(
     scores = compute_erl(
         gt_graph, node_segment_lut, mask_segment_id, merge_threshold, erl_intervals
     )
-    print(f"ERL for seg {pred_seg_path}: {scores[0]}")
+    print(f"ERL/GT for seg {pred_seg_path}: {scores}")
     return scores
 
 
