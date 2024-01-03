@@ -314,17 +314,18 @@ def evaluate_skeletons(
     skeleton_segment, count = np.unique(
         skeleton_segment_all, axis=0, return_counts=True
     )
+
+    ### find segments that cover more than one gt skeleton
     # AxonEM paper: only count the pairs that have intersections
     # more than merge_threshold amount of voxels
-    skeleton_segment = skeleton_segment[count >= merge_threshold]
-
+    skeleton_segment_big = skeleton_segment[count >= merge_threshold]
     # number of times that a segment was mapped to a skeleton
     segments, num_segment_skeletons = np.unique(
-        skeleton_segment[:, 1], return_counts=True
+        skeleton_segment_big[:, 1], return_counts=True
     )
-
     # all segments that merge at least two skeletons
     merging_segments = segments[num_segment_skeletons > 1]
+
     if mask_segment_id is not None:
         mask_id, mask_count = np.unique(mask_segment_id, return_counts=True)
         merging_segments = np.unique(
@@ -339,6 +340,7 @@ def evaluate_skeletons(
     # print("merging seg:", merging_segments)
     # print("merging:", skeleton_segment[merging_segments_mask].T)
     # print("merging seg:", np.unique(skeleton_segment[:, 1][merging_segments_mask]))
+    # import pdb; pdb.set_trace()
     # print("merging skel:", np.unique(merged_skeletons))
     # skeleton_segment[skeleton_segment[:, 1]==57, 0]
     # np.unique(skeleton_segment_all[skeleton_segment_all[:, 1]==1021,0])

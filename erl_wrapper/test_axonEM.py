@@ -89,7 +89,7 @@ def get_arguments():
         "--merge-threshold",
         type=int,
         help="threshold number of voxels to be a false merge",
-        default=0,
+        default=50,
     )
     parser.add_argument(
         "-i",
