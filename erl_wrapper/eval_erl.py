@@ -206,7 +206,6 @@ def expected_run_length(
     skeleton_length_all = skeleton_lengths.sum()
     erl_all = (erl_weighted / skeleton_length_all).sum()
     skel_all = (skel_weighted / skeleton_length_all).sum()
-    import pdb; pdb.set_trace()
 
     if erl_intervals is not None:
         erl = np.zeros([len(erl_intervals), 2])

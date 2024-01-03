@@ -14,11 +14,18 @@ from evalutils.evalutils import (
 class AxonEM:
     def __init__(self):
         self.num_chunk = 64
+
         self.human_gt = os.path.join(
-            DEFAULT_GROUND_TRUTH_PATH, "gt_human_16nm_skel_stats_gc.p"
+            DEFAULT_GROUND_TRUTH_PATH, "gt_human_32nm_skel_stats.p"
+        )
+        self.human_gt_mask = os.path.join(
+            DEFAULT_GROUND_TRUTH_PATH, "gt_human_32nm_mask.h5"
         )
         self.mouse_gt = os.path.join(
-            DEFAULT_GROUND_TRUTH_PATH, "gt_mouse_16nm_skel_stats_gc.p"
+            DEFAULT_GROUND_TRUTH_PATH, "gt_mouse_32nm_skel_stats.p"
+        )
+        self.mouse_gt_mask = os.path.join(
+            DEFAULT_GROUND_TRUTH_PATH, "gt_mouse_32nm_mask.h5"
         )
         self.human_input = os.path.join(
             DEFAULT_INPUT_PATH, "0_human_instance_seg_pred.h5"
@@ -40,20 +47,20 @@ class AxonEM:
     def evaluate(self):
         human_scores = test_AxonEM(
             gt_stats_path=self.human_gt,
+            gt_mask_path=self.human_gt_mask,
             pred_seg_path=self.human_input,
             num_chunk=self.num_chunk,
-        )
+        )[0]
         mouse_scores = test_AxonEM(
             gt_stats_path=self.mouse_gt,
+            gt_mask_path=self.mouse_gt_mask,
             pred_seg_path=self.mouse_input,
             num_chunk=self.num_chunk,
-        )
+        )[0]
         metrics = {
-            "erl": np.mean(human_scores + mouse_scores),
-            "erl_human": np.mean(human_scores),
-            "erl_mouse": np.mean(mouse_scores),
-            "scores_human": human_scores,
-            "scores_mouse": mouse_scores,
+            "erl": (human_scores + mouse_scores)/2,
+            "erl_human": human_scores,
+            "erl_mouse": mouse_scores,
         }
 
         with open(self.output_file, "w") as f:
