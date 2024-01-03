@@ -309,6 +309,7 @@ def evaluate_skeletons(
     merging_segments_mask = np.isin(skeleton_segment[:, 1], merging_segments)
     merged_skeletons = skeleton_segment[:, 0][merging_segments_mask]
     merging_segments = set(merging_segments)
+    import pdb; pdb.set_trace()
     # skeleton_segment[skeleton_segment[:,1]==207]
 
     # print("merging seg:", merging_segments)
