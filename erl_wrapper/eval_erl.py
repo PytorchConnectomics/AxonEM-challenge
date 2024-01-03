@@ -194,20 +194,20 @@ def expected_run_length(
     skeleton_lengths = np.array(list(skeleton_lengths.values()))
     skeleton_erls = np.array(list(skeleton_erls.values()))
     erl_weighted = skeleton_length * skeleton_erls
-    erl_all = (erl_weighted / skeleton_lengths.sum()).sum()
+    skeleton_length_all = skeleton_lengths.sum()
+    erl_all = (erl_weighted / skeleton_length_all).sum()
 
     if erl_intervals is not None:
-        erl = np.zeros(len(erl_intervals))
-        erl[0] = erl_all
+        erl = np.zeros([len(erl_intervals), 2])
+        erl[0] = [erl_all, skeleton_length_all]
         for i in range(1, len(skeletons_erl)):
             skeleton_index = (skeleton_lengths >= erl_intervals[i - 1]) * (
                 skeleton_lengths < erl_intervals[i]
             )
-            erl[i] = sum(
-                erl_weighted[skeleton_index] / skeleton_lengths[skeleton_index].sum()
-            )
+            erl[i, 1] = skeleton_lengths[skeleton_index].sum()
+            erl[i, 0] = sum(erl_weighted[skeleton_index] / erl[i, 1])
     else:
-        erl = erl_all
+        erl = [erl_all, skeleton_length_all]
 
     if return_merge_split_stats:
         return erl, merge_split_stats
