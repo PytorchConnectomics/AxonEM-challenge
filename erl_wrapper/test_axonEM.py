@@ -8,7 +8,7 @@ from networkx_lite import *
 
 
 def test_AxonEM(
-    gt_stats_path, gt_mask_path, pred_seg_path, num_chunk, merge_threshold, erl_intervals
+    gt_stats_path, pred_seg_path, gt_mask_path=None, num_chunk=1, merge_threshold=0, erl_intervals=''
 ):
     """
     The function `test_AxonEM` takes in the paths to ground truth statistics and predicted segmentation,
@@ -117,8 +117,8 @@ if __name__ == "__main__":
     # compute erl
     test_AxonEM(
         args.gt_stats_path,
-        args.gt_mask_path,
         args.seg_path,
+        args.gt_mask_path,
         args.num_chunk,
         args.merge_threshold,
         args.erl_intervals,

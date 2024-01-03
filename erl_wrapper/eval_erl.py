@@ -53,10 +53,11 @@ def compute_segment_lut(
                     mask_z = mask[start_z:last_z]
                 mask_id[chunk_id] = seg[mask_z > 0]
             start_z = last_z
-        # remove irrelevant seg ids (not used by nodes)
-        node_lut_unique = np.unique(node_lut)
-        for chunk_id in range(chunk_num):
-            mask_id[chunk_id] = mask_id[chunk_id][np.in1d(mask_id[chunk_id], node_lut_unique)]
+        if mask is not None:
+            # remove irrelevant seg ids (not used by nodes)
+            node_lut_unique = np.unique(node_lut)
+            for chunk_id in range(chunk_num):
+                mask_id[chunk_id] = mask_id[chunk_id][np.in1d(mask_id[chunk_id], node_lut_unique)]
         mask_id = np.concatenate(mask_id)
     return node_lut, mask_id
 
