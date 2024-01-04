@@ -1,7 +1,17 @@
-import sys
+import os, sys
 import pickle
 import h5py
 import numpy as np
+
+
+def mkdir(fn, opt=""):
+    if opt == "parent":  # until the last /
+        fn = fn[: fn.rfind("/")]
+    if not os.path.exists(fn):
+        if "all" in opt:
+            os.makedirs(fn)
+        else:
+            os.mkdir(fn)
 
 
 def read_vol(filename, dataset_name=None, chunk_id=0, chunk_num=1):
@@ -125,3 +135,14 @@ def get_volume_size_h5(filename, dataset_name=None):
             volume_size = fid[dataset_name[0]].shape
     fid.close()
     return volume_size
+
+
+def pts_convertor(pts, factor=10000):
+    if pts.shape[1] == 3:
+        # Nx3 -> N
+        return pts[:, 0] * factor * factor + pts[:, 1] * factor + pts[:, 2]
+    elif pts.ndim == 1:
+        # N -> Nx3
+        return np.vstack(
+            [pts // (factor * factor), (pts // factor) % factor, pts % factor]
+        ).T

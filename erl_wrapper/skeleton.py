@@ -76,7 +76,9 @@ def skeletonize(
     )
 
 
-def skeleton_to_networkx(skeletons, skeleton_resolution=None, return_all_nodes=False, data_type=np.uint16):
+def skeleton_to_networkx(
+    skeletons, skeleton_resolution=None, return_all_nodes=False, data_type=np.uint16
+):
     """
     The function `skeleton_to_networkx` converts a skeleton object into a networkx graph, with an option
     to return all nodes.
@@ -126,7 +128,7 @@ def skeleton_to_networkx(skeletons, skeleton_resolution=None, return_all_nodes=F
 
 
 def node_edge_to_networkx(
-    nodes, edges, skeleton_resolution=None, return_all_nodes=False, data_type = np.uint16
+    nodes, edges, skeleton_resolution=None, return_all_nodes=False, data_type=np.uint16
 ):
     """
     The function `node_edge_to_networkx` converts a set of nodes and edges into a networkx graph object,

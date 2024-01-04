@@ -1,9 +1,48 @@
+import os
+import numpy as np
+from data_io import read_vol, write_vol, mkdir
+
 # step 1: compute node_id-segment lookup table from predicted segmemtation and node positions
 # step 2: compute the ERL from the lookup table and the gt graph
 # graph: networkx by default. To save memory for grand-challenge evaluation, we use netowrkx_lite
-import numpy as np
-from data_io import read_vol
 
+
+def compute_segment_lut_tile(
+    seg_path_format, zran, yran, xran, pts, output_path_format, factor=[1, 2048, 2048]
+):
+    for z in zran:
+        mkdir(output_path_format % (z, 0, 0), 'parent')
+        for y in yran:
+            for x in xran:
+                sn = output_path_format % (z, y, x)
+                if not os.path.exists(sn):
+                    seg = read_vol(seg_path_format % (z, y, x))
+                    sz = seg.shape
+                    ind = (pts[:, 0] >= z * factor[0]) * (
+                        pts[:, 0] < z * factor[0] + sz[0]
+                    )
+                    ind = ind * (pts[:, 1] >= y * factor[1]) * (
+                        pts[:, 1] < y * factor[1] + sz[1]
+                    )
+                    ind = ind * (pts[:, 2] >= x * factor[2]) * (
+                        pts[:, 2] < x * factor[2] + sz[2]
+                    )                    
+                    val = seg[
+                        pts[ind, 0] - z * factor[0], pts[ind, 1] - y * factor[1], 
+                        pts[ind, 2]  - x * factor[2]]
+                    write_vol(sn, [ind, val], ["ind", "val"])
+
+
+def compute_segment_lut_tile_combine(zran, yran, xran, output_path_format)
+    out = None
+    for z in zran:
+        for y in yran:
+            for x in xran:
+                ind, val = read_vol(output_path_format % (z, y, x))
+                if out is None:
+                    out = np.zeros(ind.shape).astype(val.dtype)
+                out[ind] = val
+    return out
 
 def compute_segment_lut(
     segment, node_position, mask=None, chunk_num=1, data_type=np.uint32
@@ -57,7 +96,9 @@ def compute_segment_lut(
             # remove irrelevant seg ids (not used by nodes)
             node_lut_unique = np.unique(node_lut)
             for chunk_id in range(chunk_num):
-                mask_id[chunk_id] = mask_id[chunk_id][np.in1d(mask_id[chunk_id], node_lut_unique)]
+                mask_id[chunk_id] = mask_id[chunk_id][
+                    np.in1d(mask_id[chunk_id], node_lut_unique)
+                ]
         mask_id = np.concatenate(mask_id)
     return node_lut, mask_id
 
